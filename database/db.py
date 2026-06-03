@@ -14,7 +14,9 @@ class Database:
             join_date=None,
             upload_count=0,
             dump_channel=None,
-            session=None  # Session field login ke liye
+            session=None,
+            api_id=None,
+            api_hash=None
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -36,24 +38,30 @@ class Database:
     async def delete_user(self, user_id):
         await self.col.delete_many({'id': int(user_id)})
 
-    # 🔑 LOGIN SESSION FUNCTIONS (REQUIRED FOR /LOGIN)
+    # 🔑 ALL LOGIN FUNCTIONS (REQUIRED FOR /LOGIN)
     async def get_session(self, id):
         user = await self.col.find_one({'id': int(id)})
         return user.get("session") if user else None
 
     async def set_session(self, id, session):
-        await self.col.update_one(
-            {'id': int(id)}, 
-            {'$set': {'session': session}}, 
-            upsert=True
-        )
+        await self.col.update_one({'id': int(id)}, {'$set': {'session': session}}, upsert=True)
 
     async def rem_session(self, id):
-        await self.col.update_one(
-            {'id': int(id)}, 
-            {'$set': {'session': None}}, 
-            upsert=True
-        )
+        await self.col.update_one({'id': int(id)}, {'$set': {'session': None}}, upsert=True)
+
+    async def get_api_id(self, id):
+        user = await self.col.find_one({'id': int(id)})
+        return user.get("api_id") if user else None
+
+    async def set_api_id(self, id, api_id):
+        await self.col.update_one({'id': int(id)}, {'$set': {'api_id': api_id}}, upsert=True)
+
+    async def get_api_hash(self, id):
+        user = await self.col.find_one({'id': int(id)})
+        return user.get("api_hash") if user else None
+
+    async def set_api_hash(self, id, api_hash):
+        await self.col.update_one({'id': int(id)}, {'$set': {'api_hash': api_hash}}, upsert=True)
 
 # Database client instance ka setup
 db = Database(DB_URI, DB_NAME)
