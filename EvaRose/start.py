@@ -375,12 +375,15 @@ async def settings_cmd(client, message):
     dump_id = await get_dump_channel(user_id)
     
     if dump_id:
-        text = f"**⚙️ Aapki Bot Settings:**\n\n📢 **Dump Channel ID:** `{dump_id}`"
+        text = f"**⚙️ CUSTOMIZE YOUR SETTINGS AS PER YOUR NEEDS.**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = "**⚙️ Aapki Bot Settings:**\n\n📢 **Dump Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ CUSTOMIZE YOUR SETTINGS AS PER YOUR NEEDS.**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
     buttons = [
-        [InlineKeyboardButton("📢 Set Dump Channel", callback_data="set_dump")]
+        [
+            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump"),
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+        ]
     ]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
@@ -388,30 +391,36 @@ async def settings_cmd(client, message):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    # User se ID mangna
     await client.send_message(
         callback_query.from_user.id,
         "**Plz apne Dump Channel ki ID bhejiye.**\n\n"
         "👉 _Note: Pehle bot ko apne channel me Admin bana lijiye, phir channel ki ID (e.g., -100xxxxxxxxx) yahan bhejiye._"
     )
     
-    # User ke agle message ka wait karna (Pyromod Listen feature)
     response = await client.listen(callback_query.from_user.id)
     
     try:
         channel_id = int(response.text)
-        # Check karne ke liye ki bot channel me hai ya nahi
         chat = await client.get_chat(channel_id)
         
-        # ID ko database me save karna
         await set_dump_channel(callback_query.from_user.id, channel_id)
-        await response.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai.")
+        await response.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai. Ab aap /settings check kar sakte hain.")
     except ValueError:
         await response.reply_text("❌ **Error:** Sahi format me Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
     except Exception as e:
         await response.reply_text(f"❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko admin banayein.")
-        
 
-# Don't Remove Credit @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
+@Client.on_callback_query(filters.regex("^rem_dump$"))
+async def remove_dump_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if not dump_id:
+        await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
+        return
+        
+    # Database me None ya 0 set karke channel remove karna
+    await set_dump_channel(user_id, None)
+    await callback_query.message.edit_text(
+        "❌ **Aapka Dump Channel successfully remove kar diya gaya hai!**\n\nNaya channel jodne ke liye fir se /settings use karein."
+	)
