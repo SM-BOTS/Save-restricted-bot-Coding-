@@ -6,17 +6,17 @@ class Database:
     def __init__(self, uri, database_name):
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
-        self.col = self.db.user
+        self.col = self.db.user  # Tech VJ user collection
         
     def new_user(self, id):
         return dict(
             id=id,
             join_date=None,
             upload_count=0,
-            dump_channel=None
+            dump_channel=None,
+            session=None  # Session field login ke liye
         )
         
-    # *args aur **kwargs jodne se ye 2 ya 3 arguments par bhi crash nahi hoga
     async def add_user(self, id, *args, **kwargs):
         user = self.new_user(id)
         await self.col.insert_one(user)
@@ -35,6 +35,25 @@ class Database:
         
     async def delete_user(self, user_id):
         await self.col.delete_many({'id': int(user_id)})
+
+    # 🔑 LOGIN SESSION FUNCTIONS (REQUIRED FOR /LOGIN)
+    async def get_session(self, id):
+        user = await self.col.find_one({'id': int(id)})
+        return user.get("session") if user else None
+
+    async def set_session(self, id, session):
+        await self.col.update_one(
+            {'id': int(id)}, 
+            {'$set': {'session': session}}, 
+            upsert=True
+        )
+
+    async def rem_session(self, id):
+        await self.col.update_one(
+            {'id': int(id)}, 
+            {'$set': {'session': None}}, 
+            upsert=True
+        )
 
 # Database client instance ka setup
 db = Database(DB_URI, DB_NAME)
