@@ -446,6 +446,82 @@ async def set_channel_via_command(client, message):
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
 async def remove_dump_callback(client, callback_query):
+# ----------------------------------------------------
+# FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
+# ----------------------------------------------------
+from pyrogram.errors import MessageNotModified
+
+@Client.on_message(filters.command("settings") & filters.private)
+async def settings_cmd(client, message):
+    user_id = message.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if dump_id:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+    else:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        
+    buttons = [
+        [
+            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+        ]
+    ]
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+
+@Client.on_callback_query(filters.regex("^settings_cmd$"))
+async def settings_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if dump_id:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+    else:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        
+    buttons = [
+        [
+            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+        ]
+    ]
+    try:
+        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    except MessageNotModified:
+        await callback_query.answer("Aap pehle se hi settings menu me hain! 😉")
+
+
+@Client.on_callback_query(filters.regex("^set_dump_info$"))
+async def set_dump_callback(client, callback_query):
+    await callback_query.message.delete()
+    
+    # Send normal message to request ID
+    msg = await client.send_message(
+        callback_query.from_user.id,
+        "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
+        "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
+        "2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"
+    )
+    
+    # Direct message input waiting method
+    try:
+        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
+        if response and response.text:
+            raw_id = response.text.strip()
+            channel_id = int(raw_id)
+            
+            # Save to Database straight away
+            await set_dump_channel(callback_query.from_user.id, channel_id)
+            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
+    except ValueError:
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
+    except Exception as e:
+        await client.send_message(callback_query.from_user.id, "⏱️ **Timeout ya Error:** Aapne ID bhejne me der kar di ya koi aur dikkat aayi. Phir se koshish karein.")
+
+
+@Client.on_callback_query(filters.regex("^rem_dump$"))
+async def remove_dump_callback(client, callback_query):
     user_id = callback_query.from_user.id
     dump_id = await get_dump_channel(user_id)
     
@@ -460,16 +536,3 @@ async def remove_dump_callback(client, callback_query):
         )
     except MessageNotModified:
         pass
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    
-    if not dump_id:
-        await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
-        return
-        
-    await set_dump_channel(user_id, None)
-    await callback_query.message.edit_text(
-        "❌ **Aapka Dump Channel successfully remove kar diya gaya hai!**\n\nNaya channel jodne ke liye fir se `/settings` use karke check karein."
-	)
