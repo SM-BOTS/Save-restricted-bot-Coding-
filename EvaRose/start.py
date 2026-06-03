@@ -358,6 +358,55 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except:
         pass
+
+
+# ----------------------------------------------------
+# DUMP CHANNEL SETTINGS CODE BY EVAROSE
+# ----------------------------------------------------
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from TechVJ.database.db import get_dump_channel, set_dump_channel # Agar import error aaye toh TechVJ ki jagah EvaRose kar dena
+
+@Client.on_message(filters.command("settings") & filters.private)
+async def settings_cmd(client, message):
+    user_id = message.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if dump_id:
+        text = f"**⚙️ Aapki Bot Settings:**\n\n📢 **Dump Channel ID:** `{dump_id}`"
+    else:
+        text = "**⚙️ Aapki Bot Settings:**\n\n📢 **Dump Channel:** _Abhi set nahi hai (Not Set)_"
+        
+    buttons = [
+        [InlineKeyboardButton("📢 Set Dump Channel", callback_data="set_dump")]
+    ]
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+@Client.on_callback_query(filters.regex("^set_dump$"))
+async def set_dump_callback(client, callback_query):
+    await callback_query.message.delete()
+    
+    # User se ID mangna
+    await client.send_message(
+        callback_query.from_user.id,
+        "**Plz apne Dump Channel ki ID bhejiye.**\n\n"
+        "👉 _Note: Pehle bot ko apne channel me Admin bana lijiye, phir channel ki ID (e.g., -100xxxxxxxxx) yahan bhejiye._"
+    )
+    
+    # User ke agle message ka wait karna (Pyromod Listen feature)
+    response = await client.listen(callback_query.from_user.id)
+    
+    try:
+        channel_id = int(response.text)
+        # Check karne ke liye ki bot channel me hai ya nahi
+        chat = await client.get_chat(channel_id)
+        
+        # ID ko database me save karna
+        await set_dump_channel(callback_query.from_user.id, channel_id)
+        await response.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai.")
+    except ValueError:
+        await response.reply_text("❌ **Error:** Sahi format me Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
+    except Exception as e:
+        await response.reply_text(f"❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko admin banayein.")
         
 
 # Don't Remove Credit @VJ_Bots
