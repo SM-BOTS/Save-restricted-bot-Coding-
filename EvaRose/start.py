@@ -375,7 +375,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ ADVANCE AUTO DELETE TIMER FUNCTION WITH ALERT MESSAGE BY EVAROSE
+# ⏱️ ADVANCE AUTO DELETE TIMER FUNCTION WITH FIXED QUOTES BY EVAROSE
 async def auto_delete_msg(client, chat_id, message_id, delay=300):
     await asyncio.sleep(delay)
     try:
@@ -405,7 +405,7 @@ async def settings_cmd(client, message):
     buttons = [
         [
             InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾伏𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
         ]
     ]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -453,4 +453,4 @@ async def set_dump_callback(client, callback_query):
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
     except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti 
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti ha
