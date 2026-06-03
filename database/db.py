@@ -1,5 +1,6 @@
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
+from pyrogram.errors import MessageNotModified
 
 class Database:
     
@@ -67,7 +68,7 @@ class Database:
 db = Database(DB_URI, DB_NAME)
 
 # ----------------------------------------------------
-# DUMP CHANNEL DATABASE FUNCTIONS BY EVAROSE
+# AUTOMATIC DUMP FORWARDER LOGIC BY EVAROSE
 # ----------------------------------------------------
 
 async def get_dump_channel(user_id):
@@ -82,3 +83,12 @@ async def set_dump_channel(user_id, channel_id):
         {"$set": {"dump_channel": channel_id}},
         upsert=True
     )
+
+# Yeh naya function automatically file ko user ke dump channel me copy kar dega jab bot reply karega
+async def auto_forward_to_dump(client, user_id, message_to_copy):
+    dump_id = await get_dump_channel(user_id)
+    if dump_id:
+        try:
+            await message_to_copy.copy(chat_id=int(dump_id))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
