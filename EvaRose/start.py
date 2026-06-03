@@ -368,7 +368,6 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
 # DUMP CHANNEL SETTINGS CODE BY EVAROSE
 # ----------------------------------------------------
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from TechVJ.database.db import get_dump_channel, set_dump_channel # Agar import error aaye toh TechVJ ki jagah EvaRose kar dena
 
 @Client.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, message):
