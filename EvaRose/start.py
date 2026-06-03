@@ -15,7 +15,6 @@ from bot import TechVJUser
 
 class batch_temp(object):
     IS_BATCH = {}
-    # Naye system ke liye har user ki session files track karne ke liye
     USER_FILES = {}
 
 async def downstatus(client, statusfile, message, chat):
@@ -149,7 +148,7 @@ async def save(client: Client, message: Message):
 				
         batch_temp.IS_BATCH[message.from_user.id] = False
         
-        # Reset user files tracking list for current batch
+        # Reset current tracking batch
         batch_temp.USER_FILES[message.from_user.id] = []
 
         for msgid in range(fromID, toID+1):
@@ -184,7 +183,6 @@ async def save(client: Client, message: Message):
                 try:
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
                     
-                    # Track message id for auto deletion later
                     if copied_msg:
                         batch_temp.USER_FILES[message.from_user.id].append(copied_msg.id)
                         
@@ -202,15 +200,14 @@ async def save(client: Client, message: Message):
             # wait time
             await asyncio.sleep(WAITING_TIME)
 
-        # 📢 SARI FILES UPLOAD HO JANE KE BAD NOTIFICATION LOGIC BY EVAROSE
+        # 📢 TASK END NOTIFICATION (Caption se hat kar aakhiri me notification)
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
                 notif_msg = await client.send_message(
                     chat_id=message.chat.id,
-                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files safely upload kar di gayi hain.\n\n⚠️ **IMPORTANT NOTICE:** Copyright aur privacy policy ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe kahin aur forward kar lein. 😉"
+                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe forward kar lein."
                 )
-                # Pure files list aur is notification message ko auto-delete timer me daal do
                 all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
                 asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
             except Exception as e:
@@ -264,7 +261,7 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # ⏱️ Asli caption bina kisi alteration ke normal rahega
+    # Caption original rahega bilkul safa
     caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -330,11 +327,10 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    # Track the file message id
+    # Save target message IDs
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
 
-    # Dump channel backup log
     if uploaded_msg and user_dump:
         try:
             await uploaded_msg.copy(chat_id=int(user_dump))
@@ -387,17 +383,16 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ BATCH AUTO DELETE WITH ALERTS BY EVAROSE (Sari files ek sath mita dega)
+# ⏱️ CLEAN BATCH TIMER (TRIPLE QUOTES APPLIED)
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
-        # Saari files aur notification message ek sath delete honge
         await client.delete_messages(chat_id, message_ids)
-        
-        # Ek aakhri alert user ko confirmation ke liye
         await client.send_message(
             chat_id=chat_id,
-            text="🚨 **Batch Files Cleaned Up!**\n\nCopyright security reasons ki wajah se saari files aur completion alert chat se successfully permanent delete kar diye gaye hain! 🧼"
+            text="""🚨 **Batch Files Cleaned Up!**
+
+Copyright security reasons ki wajah se saari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼"""
         )
     except Exception as e:
         print(f"Batch Auto-delete error: {e}")
@@ -413,14 +408,14 @@ async def settings_cmd(client, message):
     dump_id = await get_dump_channel(user_id)
     
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
     buttons = [
         [
-            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+            InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"),
+            InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")
         ]
     ]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -432,14 +427,14 @@ async def settings_callback(client, callback_query):
     dump_id = await get_dump_channel(user_id)
     
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
     buttons = [
         [
-            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+            InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"),
+            InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")
         ]
     ]
     try:
@@ -452,8 +447,20 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    msg = await client.send_message(
-        callback_query.from_user.id,
-        "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
-        "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
-        "2️⃣ Phir apne channel ki I
+    # TRIPLE QUOTES FIXED FOR THE STRING ERROR SEEN IN LOGS
+    await client.send_message(
+        chat_id=callback_query.from_user.id,
+        text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
+
+1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.
+2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"""
+    )
+    
+    try:
+        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
+        if response and response.text:
+            raw_id = response.text.strip()
+            channel_id = int(raw_id)
+            
+            await set_dump_channel(callback_query.from_user.id, channel_id)
+            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_i
