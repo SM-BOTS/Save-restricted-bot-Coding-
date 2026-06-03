@@ -249,10 +249,12 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
+    # ⏱️ File ke sath alert text caption set kar rahe hain
     if msg.caption:
-        caption = msg.caption
+        caption = msg.caption + "\n\n⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!"
     else:
-        caption = None
+        caption = "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!"
+        
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
     uploaded_msg = None
@@ -373,11 +375,15 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ AUTO DELETE TIMER FUNCTION BY EVAROSE (Sahi line par add ho gaya!)
+# ⏱️ ADVANCE AUTO DELETE TIMER FUNCTION WITH ALERT MESSAGE BY EVAROSE
 async def auto_delete_msg(client, chat_id, message_id, delay=300):
     await asyncio.sleep(delay)
     try:
         await client.delete_messages(chat_id, message_id)
+        await client.send_message(
+            chat_id=chat_id,
+            text="🚨 **File Deleted Successfully!**\n\nCopyright aur privacy issues ki wajah se yeh file system se **5 minutes** ke baad automatically delete kar di gayi hai. 😉"
+        )
     except Exception as e:
         print(f"Auto-delete error: {e}")
 
@@ -447,16 +453,4 @@ async def set_dump_callback(client, callback_query):
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
     except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
-    except Exception as e:
-        await client.send_message(callback_query.from_user.id, "⏱️ **Timeout ya Error:** Aapne ID bhejne me der kar di ya koi aur dikkat aayi. Phir se koshish karein.")
-
-
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    
-    if not dump_id:
-        await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
-        
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti 
