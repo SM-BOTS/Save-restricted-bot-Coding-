@@ -62,6 +62,21 @@ class Database:
 
 db = Database(DB_URI, "TechVJDemoBot")
 
+# --- DUMP CHANNEL DATABASE CODE ---
+
+async def set_dump_channel(user_id, channel_id):
+    """User ki dump channel ID database me save karne ke liye"""
+    await db.users.update_one(
+        {"_id": int(user_id)},
+        {"$set": {"dump_channel": int(channel_id)}},
+        upsert=True
+    )
+
+async def get_dump_channel(user_id):
+    """User ki dump channel ID database se nikalne ke liye"""
+    user = await db.users.find_one({"_id": int(user_id)})
+    return user.get("dump_channel", None) if user else None
+
 # Don't Remove Credit @VJ_Bots
 # Subscribe YouTube Channel For Amazing Bot @Tech_VJ
 # Ask Doubt on telegram @KingVJ01
