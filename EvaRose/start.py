@@ -388,9 +388,27 @@ async def settings_cmd(client, message):
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 
+@Client.on_callback_query(filters.regex("^settings_cmd$"))
+async def settings_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if dump_id:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+    else:
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        
+    buttons = [
+        [
+            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+        ]
+    ]
+    await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
-    # Purane message ko edit karke instructions dikhana bina loop ke
     await callback_query.message.edit_text(
         "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
         "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
