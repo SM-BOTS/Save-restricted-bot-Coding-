@@ -1,7 +1,3 @@
-# Don't Remove Credit @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
-
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -20,7 +16,8 @@ class Database:
             dump_channel=None
         )
         
-    async def add_user(self, id):
+    # *args aur **kwargs jodne se ye 2 ya 3 arguments par bhi crash nahi hoga
+    async def add_user(self, id, *args, **kwargs):
         user = self.new_user(id)
         await self.col.insert_one(user)
         
