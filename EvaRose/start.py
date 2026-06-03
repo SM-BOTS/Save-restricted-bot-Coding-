@@ -365,9 +365,8 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
 
 
 # ----------------------------------------------------
-# DUMP CHANNEL SETTINGS CODE BY EVAROSE
+# STABLE DUMP CHANNEL SETTINGS CODE BY EVAROSE
 # ----------------------------------------------------
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 @Client.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, message):
@@ -375,40 +374,62 @@ async def settings_cmd(client, message):
     dump_id = await get_dump_channel(user_id)
     
     if dump_id:
-        text = f"**⚙️ CUSTOMIZE YOUR SETTINGS AS PER YOUR NEEDS.**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = (
+            "**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n"
+            "📢 **Current Channel:**\n"
+            f"👉 `{dump_id}`\n\n"
+            "👉 _Agar channel badalna ya remove karna hai, toh niche diye gaye buttons ka use karein._"
+        )
     else:
-        text = f"**⚙️ CUSTOMIZE YOUR SETTINGS AS PER YOUR NEEDS.**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = (
+            "**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n"
+            "📢 **Current Channel:** _Abhi set nahi hai (Not Set)_\n\n"
+            "💬 **Channel Kaise Set Karein?**\n"
+            "Niche diye gaye **⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻** button par click karke instructions dekhein."
+        )
         
     buttons = [
         [
-            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump"),
+            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
             InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
         ]
     ]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
-@Client.on_callback_query(filters.regex("^set_dump$"))
-async def set_dump_callback(client, callback_query):
-    await callback_query.message.delete()
-    
-    await client.send_message(
-        callback_query.from_user.id,
-        "**Plz apne Dump Channel ki ID bhejiye.**\n\n"
-        "👉 _Note: Pehle bot ko apne channel me Admin bana lijiye, phir channel ki ID (e.g., -100xxxxxxxxx) yahan bhejiye._"
+
+@Client.on_callback_query(filters.regex("^set_dump_info$"))
+async def set_dump_info_callback(client, callback_query):
+    # Bina loop ke user ko instructions dena
+    await callback_query.message.edit_text(
+        "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
+        "1️⃣ Pehle bot ko apne target channel me **Admin** banayein.\n"
+        "2️⃣ Phir bot me aakar ye command bhejiye:\n"
+        "👉 `/setchannel` aapki_channel_id\n\n"
+        "**Example:**\n"
+        "`/setchannel -100123456789`\n\n"
+        "_(Aap upar diye gaye example par click karke use copy kar sakte hain, phir apni ID badal kar bhej dein)_"
     )
-    
-    response = await client.listen(callback_query.from_user.id)
-    
+
+
+@Client.on_message(filters.command("setchannel") & filters.private)
+async def set_channel_via_command(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("❌ **Galti:** Command ke sath Channel ID bhi bhejiye!\n\n**Example:** `/setchannel -100123456789`")
+        
+    raw_id = message.command[1]
     try:
-        channel_id = int(response.text)
+        channel_id = int(raw_id)
+        # Check karna ki bot channel me hai ya nahi
         chat = await client.get_chat(channel_id)
         
-        await set_dump_channel(callback_query.from_user.id, channel_id)
-        await response.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai. Ab aap /settings check kar sakte hain.")
+        # Database me save karna
+        await set_dump_channel(message.from_user.id, channel_id)
+        await message.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai.\nAb aap /settings check kar sakte hain.")
     except ValueError:
-        await response.reply_text("❌ **Error:** Sahi format me Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
+        await message.reply_text("❌ **Error:** Sahi format me Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai aur sirf numbers hote hain).")
     except Exception as e:
-        await response.reply_text(f"❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko admin banayein.")
+        await message.reply_text("❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko channel me admin banayein, phir command bhejein.")
+
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
 async def remove_dump_callback(client, callback_query):
@@ -419,7 +440,6 @@ async def remove_dump_callback(client, callback_query):
         await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
         return
         
-    # Database me None ya 0 set karke channel remove karna
     await set_dump_channel(user_id, None)
     await callback_query.message.edit_text(
         "❌ **Aapka Dump Channel successfully remove kar diya gaya hai!**\n\nNaya channel jodne ke liye fir se /settings use karein."
