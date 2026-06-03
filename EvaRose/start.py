@@ -178,6 +178,11 @@ async def save(client: Client, message: Message):
                 try:
                     # Public messages ko direct personal chat me copy karega
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                    
+                    # ⏱️ AUTO DELETE FOR PUBLIC LINKS (5 Minutes)
+                    if copied_msg:
+                        asyncio.create_task(auto_delete_msg(client, message.chat.id, copied_msg.id, delay=300))
+                        
                     # Backup to dump if exists
                     user_dump = await get_dump_channel(message.from_user.id)
                     if user_dump and copied_msg:
@@ -215,6 +220,11 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if "Text" == msg_type:
         try:
             sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            
+            # ⏱️ AUTO DELETE FOR TEXT MESSAGES (5 Minutes)
+            if sent_msg:
+                asyncio.create_task(auto_delete_msg(client, message.chat.id, sent_msg.id, delay=300))
+                
             if user_dump and sent_msg:
                 try: await sent_msg.copy(int(user_dump))
                 except: pass
@@ -313,6 +323,10 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
         except Exception as e:
             print(f"Dump forward error: {e}")
 
+    # ⏱️ START AUTO DELETE FOR PERSONAL CHAT (5 Minutes = 300 Seconds)
+    if uploaded_msg:
+        asyncio.create_task(auto_delete_msg(client, message.chat.id, uploaded_msg.id, delay=300))
+
     if os.path.exists(f'{message.id}upstatus.txt'): 
         os.remove(f'{message.id}upstatus.txt')
     if os.path.exists(file):
@@ -357,6 +371,16 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         msg.text
         return "Text"
     except: pass
+
+
+# ⏱️ AUTO DELETE TIMER FUNCTION BY EVAROSE (Sahi line par add ho gaya!)
+async def auto_delete_msg(client, chat_id, message_id, delay=300):
+    await asyncio.sleep(delay)
+    try:
+        await client.delete_messages(chat_id, message_id)
+    except Exception as e:
+        print(f"Auto-delete error: {e}")
+
 
 # ----------------------------------------------------
 # FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
@@ -435,12 +459,4 @@ async def remove_dump_callback(client, callback_query):
     
     if not dump_id:
         await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
-        return
         
-    await set_dump_channel(user_id, None)
-    try:
-        await callback_query.message.edit_text(
-            "❌ **Aapka Dump Channel successfully remove kar diya gaya hai!**\n\nNaya channel jodne ke liye fir se `/settings` use karke check karein."
-        )
-    except MessageNotModified:
-        pass
