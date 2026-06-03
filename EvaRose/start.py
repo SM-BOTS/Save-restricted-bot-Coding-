@@ -20,14 +20,13 @@ async def downstatus(client, statusfile, message, chat):
     while True:
         if os.path.exists(statusfile):
             break
-
         await asyncio.sleep(3)
       
     while os.path.exists(statusfile):
         with open(statusfile, "r") as downread:
             txt = downread.read()
         try:
-            await client.edit_message_text(chat, message.id, f"**Downloaded:** **{txt}**")
+            await client.edit_message_text(message.chat.id, message.id, f"**Downloaded:** **{txt}**")
             await asyncio.sleep(10)
         except:
             await asyncio.sleep(5)
@@ -38,13 +37,12 @@ async def upstatus(client, statusfile, message, chat):
     while True:
         if os.path.exists(statusfile):
             break
-
         await asyncio.sleep(3)      
     while os.path.exists(statusfile):
         with open(statusfile, "r") as upread:
             txt = upread.read()
         try:
-            await client.edit_message_text(chat, message.id, f"**Uploaded:** **{txt}**")
+            await client.edit_message_text(message.chat.id, message.id, f"**Uploaded:** **{txt}**")
             await asyncio.sleep(10)
         except:
             await asyncio.sleep(5)
@@ -68,8 +66,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            # Is line me callback_data="settings_cmd" hona chahiye
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗编制', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -180,7 +177,10 @@ async def save(client: Client, message: Message):
                     await client.send_message(message.chat.id, "The username is not occupied by anyone", reply_to_message_id=message.id)
                     return
                 try:
-                    await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                    # Public links ke liye bhi direct user chat ya dump system
+                    user_dump = await get_dump_channel(message.from_user.id)
+                    target_chat = int(user_dump) if user_dump else message.chat.id
+                    await client.copy_message(target_chat, msg.chat.id, msg.id, reply_to_message_id=message.id)
                 except:
                     try:    
                         await handle_private(client, acc, message, username, msgid)               
@@ -204,13 +204,19 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if msg.empty: return 
     msg_type = get_message_type(msg)
     if not msg_type: return 
-    if CHANNEL_ID:
+
+    # 🔄 DUMP CHANNEL TARGET FIX BY EVAROSE
+    user_dump = await get_dump_channel(message.from_user.id)
+    if user_dump:
+        chat = int(user_dump)
+    elif CHANNEL_ID:
         try:
             chat = int(CHANNEL_ID)
         except:
             chat = message.chat.id
     else:
         chat = message.chat.id
+
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     if "Text" == msg_type:
         try:
@@ -221,15 +227,18 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             return 
 
-    smsg = await client.send_message(message.chat.id, '**Downloading**', reply_to_message_id=message.id)
+    smsg = await client.send_message(message.chat.id, '**Downloading...**', reply_to_message_id=message.id)
     asyncio.create_task(downstatus(client, f'{message.id}downstatus.txt', smsg, chat))
     try:
         file = await acc.download_media(msg, progress=progress, progress_args=[message,"down"])
-        os.remove(f'{message.id}downstatus.txt')
+        if os.path.exists(f'{message.id}downstatus.txt'):
+            os.remove(f'{message.id}downstatus.txt')
     except Exception as e:
         if ERROR_MESSAGE == True:
             await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML) 
+        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
         return await smsg.delete()
+        
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
@@ -304,14 +313,18 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     elif "Photo" == msg_type:
         try:
             await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except:
+        except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
     if os.path.exists(f'{message.id}upstatus.txt'): 
         os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(file):
         os.remove(file)
-    await client.delete_messages(message.chat.id,[smsg.id])
+    try:
+        await client.delete_messages(message.chat.id, [smsg.id])
+    except:
+        pass
 
 
 # get the type of message
@@ -363,6 +376,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except:
         pass
+
 # ----------------------------------------------------
 # FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
 # ----------------------------------------------------
@@ -399,7 +413,7 @@ async def settings_callback(client, callback_query):
     buttons = [
         [
             InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴 LN", callback_data="rem_dump")
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
         ]
     ]
     try:
