@@ -363,93 +363,9 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except:
         pass
-
-
-# ----------------------------------------------------
-# FINAL STABLE DUMP CHANNEL SETTINGS MENU BY EVAROSE
-# ----------------------------------------------------
-from pyrogram.errors import MessageNotModified
-
-@Client.on_message(filters.command("settings") & filters.private)
-async def settings_cmd(client, message):
-    user_id = message.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    
-    if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
-    else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
-        
-    buttons = [
-        [
-            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
-        ]
-    ]
-    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-
-
-@Client.on_callback_query(filters.regex("^settings_cmd$"))
-async def settings_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    
-    if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
-    else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
-        
-    buttons = [
-        [
-            InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
-        ]
-    ]
-    try:
-        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    except MessageNotModified:
-        await callback_query.answer("Aap pehle se hi settings menu me hain! 😉")
-
-
-@Client.on_callback_query(filters.regex("^set_dump_info$"))
-async def set_dump_callback(client, callback_query):
-    try:
-        await callback_query.message.edit_text(
-            "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
-            "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
-            "2️⃣ Phir yahan aakar ye command bhejiye:\n"
-            "👉 `/setchannel` aapki_channel_id\n\n"
-            "**Example:**\n"
-            "`/setchannel -100123456789`"
-        )
-    except MessageNotModified:
-        pass
-
-
-@Client.on_message(filters.command("setchannel") & filters.private)
-async def set_channel_via_command(client, message):
-    if len(message.command) < 2:
-        return await message.reply_text("❌ **Galti:** Command ke sath Channel ID bhi bhejiye!\n\n**Example:** `/setchannel -100123456789`")
-        
-    raw_id = message.command[1]
-    try:
-        channel_id = int(raw_id)
-        chat = await client.get_chat(channel_id)
-        
-        await set_dump_channel(message.from_user.id, channel_id)
-        await message.reply_text(f"✅ **Success!** `{chat.title}` aapka dump channel set ho gaya hai.\nAb aap `/settings` check kar sakte hain.")
-    except ValueError:
-        await message.reply_text("❌ **Error:** Sahi format me Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
-    except Exception as e:
-        await message.reply_text("❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko admin banayein, phir command bhejein.")
-
-
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
 # ----------------------------------------------------
 # FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
 # ----------------------------------------------------
-from pyrogram.errors import MessageNotModified
 
 @Client.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, message):
@@ -483,7 +399,7 @@ async def settings_callback(client, callback_query):
     buttons = [
         [
             InlineKeyboardButton("⚙️ 𝚂𝙴𝚃 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
+            InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴 LN", callback_data="rem_dump")
         ]
     ]
     try:
@@ -496,7 +412,6 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    # Send normal message to request ID
     msg = await client.send_message(
         callback_query.from_user.id,
         "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
@@ -504,14 +419,12 @@ async def set_dump_callback(client, callback_query):
         "2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"
     )
     
-    # Direct message input waiting method
     try:
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             raw_id = response.text.strip()
             channel_id = int(raw_id)
             
-            # Save to Database straight away
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
     except ValueError:
