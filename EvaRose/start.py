@@ -66,7 +66,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗编制', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -149,7 +149,7 @@ async def save(client: Client, message: Message):
         for msgid in range(fromID, toID+1):
             if batch_temp.IS_BATCH.get(message.from_user.id): break
             
-            # private
+            # private links
             if "https://t.me/c/" in message.text:
                 chatid = int("-100" + datas[4])
                 try:
@@ -158,7 +158,7 @@ async def save(client: Client, message: Message):
                     if ERROR_MESSAGE == True:
                         await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
     
-            # bot
+            # bot links
             elif "https://t.me/b/" in message.text:
                 username = datas[4]
                 try:
@@ -167,20 +167,22 @@ async def save(client: Client, message: Message):
                     if ERROR_MESSAGE == True:
                         await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             
-            # public
+            # public links
             else:
                 username = datas[3]
-
                 try:
                     msg = await client.get_messages(username, msgid)
                 except UsernameNotOccupied: 
                     await client.send_message(message.chat.id, "The username is not occupied by anyone", reply_to_message_id=message.id)
                     return
                 try:
-                    # Public links ke liye bhi direct user chat ya dump system
+                    # Public messages ko direct personal chat me copy karega
+                    copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                    # Backup to dump if exists
                     user_dump = await get_dump_channel(message.from_user.id)
-                    target_chat = int(user_dump) if user_dump else message.chat.id
-                    await client.copy_message(target_chat, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                    if user_dump and copied_msg:
+                        try: await copied_msg.copy(chat_id=int(user_dump))
+                        except: pass
                 except:
                     try:    
                         await handle_private(client, acc, message, username, msgid)               
@@ -198,29 +200,24 @@ async def save(client: Client, message: Message):
         batch_temp.IS_BATCH[message.from_user.id] = True
 
 
-# handle private
+# handle private & core uploading
 async def handle_private(client: Client, acc, message: Message, chatid: int, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty: return 
     msg_type = get_message_type(msg)
     if not msg_type: return 
 
-    # 🔄 DUMP CHANNEL TARGET FIX BY EVAROSE
+    # Target chat hamesha user ki personal inbox rahegi
+    chat = message.chat.id
     user_dump = await get_dump_channel(message.from_user.id)
-    if user_dump:
-        chat = int(user_dump)
-    elif CHANNEL_ID:
-        try:
-            chat = int(CHANNEL_ID)
-        except:
-            chat = message.chat.id
-    else:
-        chat = message.chat.id
 
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     if "Text" == msg_type:
         try:
-            await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            if user_dump and sent_msg:
+                try: await sent_msg.copy(int(user_dump))
+                except: pass
             return 
         except Exception as e:
             if ERROR_MESSAGE == True:
@@ -248,14 +245,13 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
         caption = None
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
+    uploaded_msg = None
+    
     if "Document" == msg_type:
+        try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
+        except: ph_path = None
         try:
-            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
-        except:
-            ph_path = None
-        
-        try:
-            await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+            uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
@@ -263,13 +259,10 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
         
 
     elif "Video" == msg_type:
+        try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
+        except: ph_path = None
         try:
-            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
-        except:
-            ph_path = None
-        
-        try:
-            await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+            uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
@@ -277,46 +270,49 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
 
     elif "Animation" == msg_type:
         try:
-            await client.send_animation(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_animation(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         
     elif "Sticker" == msg_type:
         try:
-            await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
 
     elif "Voice" == msg_type:
         try:
-            await client.send_voice(chat, file, caption=caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
 
     elif "Audio" == msg_type:
+        try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
+        except: ph_path = None
         try:
-            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
-        except:
-            ph_path = None
-
-        try:
-            await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
+            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        
         if ph_path != None: os.remove(ph_path)
 
     elif "Photo" == msg_type:
         try:
-            await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
+    # 📢 Agar Dump Channel set hai, toh file bhejkar copy send hogi
+    if uploaded_msg and user_dump:
+        try:
+            await uploaded_msg.copy(chat_id=int(user_dump))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
+
     if os.path.exists(f'{message.id}upstatus.txt'): 
         os.remove(f'{message.id}upstatus.txt')
     if os.path.exists(file):
@@ -332,50 +328,35 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     try:
         msg.document.file_id
         return "Document"
-    except:
-        pass
-
+    except: pass
     try:
         msg.video.file_id
         return "Video"
-    except:
-        pass
-
+    except: pass
     try:
         msg.animation.file_id
         return "Animation"
-    except:
-        pass
-
+    except: pass
     try:
         msg.sticker.file_id
         return "Sticker"
-    except:
-        pass
-
+    except: pass
     try:
         msg.voice.file_id
         return "Voice"
-    except:
-        pass
-
+    except: pass
     try:
         msg.audio.file_id
         return "Audio"
-    except:
-        pass
-
+    except: pass
     try:
         msg.photo.file_id
         return "Photo"
-    except:
-        pass
-
+    except: pass
     try:
         msg.text
         return "Text"
-    except:
-        pass
+    except: pass
 
 # ----------------------------------------------------
 # FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
