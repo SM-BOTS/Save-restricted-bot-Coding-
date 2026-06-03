@@ -366,8 +366,9 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
 
 
 # ----------------------------------------------------
-# DUMP CHANNEL SETTINGS MENU BY EVAROSE
+# FINAL STABLE DUMP CHANNEL SETTINGS MENU BY EVAROSE
 # ----------------------------------------------------
+from pyrogram.errors import MessageNotModified
 
 @Client.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, message):
@@ -404,19 +405,25 @@ async def settings_callback(client, callback_query):
             InlineKeyboardButton("❌ 𝚁𝙴𝙼𝙾𝚅𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻", callback_data="rem_dump")
         ]
     ]
-    await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    try:
+        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    except MessageNotModified:
+        await callback_query.answer("Aap pehle se hi settings menu me hain! 😉")
 
 
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
-    await callback_query.message.edit_text(
-        "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
-        "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
-        "2️⃣ Phir yahan aakar ye command bhejiye:\n"
-        "👉 `/setchannel` aapki_channel_id\n\n"
-        "**Example:**\n"
-        "`/setchannel -100123456789`"
-    )
+    try:
+        await callback_query.message.edit_text(
+            "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
+            "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
+            "2️⃣ Phir yahan aakar ye command bhejiye:\n"
+            "👉 `/setchannel` aapki_channel_id\n\n"
+            "**Example:**\n"
+            "`/setchannel -100123456789`"
+        )
+    except MessageNotModified:
+        pass
 
 
 @Client.on_message(filters.command("setchannel") & filters.private)
@@ -437,6 +444,22 @@ async def set_channel_via_command(client, message):
         await message.reply_text("❌ **Error:** Bot aapke channel me nahi hai ya admin nahi hai. Pehle bot ko admin banayein, phir command bhejein.")
 
 
+@Client.on_callback_query(filters.regex("^rem_dump$"))
+async def remove_dump_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    
+    if not dump_id:
+        await callback_query.answer("⚠️ Aapka koi channel pehle se set nahi hai!", show_alert=True)
+        return
+        
+    await set_dump_channel(user_id, None)
+    try:
+        await callback_query.message.edit_text(
+            "❌ **Aapka Dump Channel successfully remove kar diya gaya hai!**\n\nNaya channel jodne ke liye fir se `/settings` use karke check karein."
+        )
+    except MessageNotModified:
+        pass
 @Client.on_callback_query(filters.regex("^rem_dump$"))
 async def remove_dump_callback(client, callback_query):
     user_id = callback_query.from_user.id
