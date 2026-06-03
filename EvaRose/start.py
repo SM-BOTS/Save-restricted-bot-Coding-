@@ -15,6 +15,8 @@ from bot import TechVJUser
 
 class batch_temp(object):
     IS_BATCH = {}
+    # Naye system ke liye har user ki session files track karne ke liye
+    USER_FILES = {}
 
 async def downstatus(client, statusfile, message, chat):
     while True:
@@ -146,6 +148,10 @@ async def save(client: Client, message: Message):
             acc = TechVJUser
 				
         batch_temp.IS_BATCH[message.from_user.id] = False
+        
+        # Reset user files tracking list for current batch
+        batch_temp.USER_FILES[message.from_user.id] = []
+
         for msgid in range(fromID, toID+1):
             if batch_temp.IS_BATCH.get(message.from_user.id): break
             
@@ -176,14 +182,12 @@ async def save(client: Client, message: Message):
                     await client.send_message(message.chat.id, "The username is not occupied by anyone", reply_to_message_id=message.id)
                     return
                 try:
-                    # Public messages ko direct personal chat me copy karega
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
                     
-                    # ⏱️ AUTO DELETE FOR PUBLIC LINKS (5 Minutes)
+                    # Track message id for auto deletion later
                     if copied_msg:
-                        asyncio.create_task(auto_delete_msg(client, message.chat.id, copied_msg.id, delay=300))
+                        batch_temp.USER_FILES[message.from_user.id].append(copied_msg.id)
                         
-                    # Backup to dump if exists
                     user_dump = await get_dump_channel(message.from_user.id)
                     if user_dump and copied_msg:
                         try: await copied_msg.copy(chat_id=int(user_dump))
@@ -197,6 +201,21 @@ async def save(client: Client, message: Message):
 
             # wait time
             await asyncio.sleep(WAITING_TIME)
+
+        # 📢 SARI FILES UPLOAD HO JANE KE BAD NOTIFICATION LOGIC BY EVAROSE
+        if batch_temp.USER_FILES.get(message.from_user.id):
+            try:
+                total_sent = len(batch_temp.USER_FILES[message.from_user.id])
+                notif_msg = await client.send_message(
+                    chat_id=message.chat.id,
+                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files safely upload kar di gayi hain.\n\n⚠️ **IMPORTANT NOTICE:** Copyright aur privacy policy ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe kahin aur forward kar lein. 😉"
+                )
+                # Pure files list aur is notification message ko auto-delete timer me daal do
+                all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
+                asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
+            except Exception as e:
+                print(f"Notification error: {e}")
+
         if LOGIN_SYSTEM == True:
             try:
                 await acc.disconnect()
@@ -212,7 +231,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     msg_type = get_message_type(msg)
     if not msg_type: return 
 
-    # Target chat hamesha user ki personal inbox rahegi
     chat = message.chat.id
     user_dump = await get_dump_channel(message.from_user.id)
 
@@ -220,11 +238,8 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if "Text" == msg_type:
         try:
             sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-            
-            # ⏱️ AUTO DELETE FOR TEXT MESSAGES (5 Minutes)
             if sent_msg:
-                asyncio.create_task(auto_delete_msg(client, message.chat.id, sent_msg.id, delay=300))
-                
+                batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
             if user_dump and sent_msg:
                 try: await sent_msg.copy(int(user_dump))
                 except: pass
@@ -249,11 +264,8 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # ⏱️ File ke sath alert text caption set kar rahe hain
-    if msg.caption:
-        caption = msg.caption + "\n\n⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!"
-    else:
-        caption = "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!"
+    # ⏱️ Asli caption bina kisi alteration ke normal rahega
+    caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
@@ -282,7 +294,7 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
 
     elif "Animation" == msg_type:
         try:
-            uploaded_msg = await client.send_animation(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
@@ -318,16 +330,16 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    # 📢 Agar Dump Channel set hai, toh file bhejkar copy send hogi
+    # Track the file message id
+    if uploaded_msg:
+        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+
+    # Dump channel backup log
     if uploaded_msg and user_dump:
         try:
             await uploaded_msg.copy(chat_id=int(user_dump))
         except Exception as e:
             print(f"Dump forward error: {e}")
-
-    # ⏱️ START AUTO DELETE FOR PERSONAL CHAT (5 Minutes = 300 Seconds)
-    if uploaded_msg:
-        asyncio.create_task(auto_delete_msg(client, message.chat.id, uploaded_msg.id, delay=300))
 
     if os.path.exists(f'{message.id}upstatus.txt'): 
         os.remove(f'{message.id}upstatus.txt')
@@ -375,17 +387,20 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ ADVANCE AUTO DELETE TIMER FUNCTION WITH ALERT MESSAGE BY EVAROSE
-async def auto_delete_msg(client, chat_id, message_id, delay=300):
+# ⏱️ BATCH AUTO DELETE WITH ALERTS BY EVAROSE (Sari files ek sath mita dega)
+async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
-        await client.delete_messages(chat_id, message_id)
+        # Saari files aur notification message ek sath delete honge
+        await client.delete_messages(chat_id, message_ids)
+        
+        # Ek aakhri alert user ko confirmation ke liye
         await client.send_message(
             chat_id=chat_id,
-            text="🚨 **File Deleted Successfully!**\n\nCopyright aur privacy issues ki wajah se yeh file system se **5 minutes** ke baad automatically delete kar di gayi hai. 😉"
+            text="🚨 **Batch Files Cleaned Up!**\n\nCopyright security reasons ki wajah se saari files aur completion alert chat se successfully permanent delete kar diye gaye hain! 🧼"
         )
     except Exception as e:
-        print(f"Auto-delete error: {e}")
+        print(f"Batch Auto-delete error: {e}")
 
 
 # ----------------------------------------------------
@@ -441,18 +456,4 @@ async def set_dump_callback(client, callback_query):
         callback_query.from_user.id,
         "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n"
         "1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.\n"
-        "2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"
-    )
-    
-    try:
-        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
-        if response and response.text:
-            raw_id = response.text.strip()
-            channel_id = int(raw_id)
-            
-            await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
-    except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID hamesha `-100` se shuru hoti hai).")
-    except Exception as e:
-        await client.sen
+        "2️⃣ Phir apne channel ki I
