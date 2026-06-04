@@ -304,7 +304,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     except Exception as e: print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# ADVANCED SETTINGS MENU LOGIC (FULLY CLOSED CLEANUP)
+# ADVANCED SETTINGS MENU LOGIC (100% FIXED DECORATORS)
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -376,4 +376,4 @@ async def set_caption_callback(client, callback_query):
             await response.reply_text("✅ **Success!** Custom caption save ho gaya.")
     except Exception as e: await client.send_message(callback_query.from_user.id, f"⏱️ **Error:** {e}")
 
-@Client.on_ca
+@Client.on_c
