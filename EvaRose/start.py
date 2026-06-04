@@ -5,6 +5,7 @@
 import os
 import asyncio
 import pyrogram
+import re
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
@@ -16,6 +17,28 @@ from bot import TechVJUser
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
+
+# FIXED CAPTION CLEANER LOGIC WITH CORRECT BOLD FORMATTING PATTERN
+def clean_bad_caption(caption_text):
+    if not caption_text:
+        return None
+    
+    # Yeh pattern bold asterisks (**) aur emojis dono ko sahi se handle karega
+    pattern = r"⏱️\s*\*?\*?Note:\*?\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\*?\(?5\s*minutes\)?\*?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+    
+    # 1. Pehle exact pattern clean karega
+    cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
+    
+    # 2. Backup filter: Agar kisi wajah se pattern miss bhi ho, toh direct string replace se saaf karega
+    bad_strings = [
+        "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
+        "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
+    ]
+    for bad_str in bad_strings:
+        cleaned = cleaned.replace(bad_str, "")
+        
+    cleaned = cleaned.strip()
+    return cleaned if cleaned else None
 
 async def downstatus(client, statusfile, message, chat):
     while True:
@@ -61,8 +84,8 @@ async def send_start(client: Client, message: Message):
         [
             InlineKeyboardButton("❣️ Developer", url = "https://t.me/kingvj01")
         ],[
-            InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
-            InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
+            InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀ體 ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
+            InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024', url='https://t.me/vj_bots')
         ],[
             InlineKeyboardButton('⚙️ Bot Settings', callback_data='settings_cmd') 
         ]
@@ -185,7 +208,6 @@ async def save(client: Client, message: Message):
                 pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 📢 BATCH COMPLETE ALERT (CLEANED UP - NO MORE 5 MINUTE TEXT)
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -211,7 +233,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     if "Text" == msg_type:
         try:
-            sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            text_msg = clean_bad_caption(msg.text)
+            sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
             if user_dump and sent_msg:
@@ -238,8 +261,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # Caption is strictly kept original
-    caption = msg.caption if msg.caption else None
+    # ENHANCED CLEANING MECHANISM FOR INCOMING MESSAGES
+    caption = clean_bad_caption(msg.caption)
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
@@ -356,7 +379,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-# ⏱️ Batch delete function
+# Batch delete function
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
