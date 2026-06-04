@@ -253,6 +253,7 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
+    # 🛑 STRICT CAPTION CLEANING LOGIC (Zabardasti original caption pass hoga)
     caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -428,5 +429,4 @@ async def set_dump_callback(client, callback_query):
         await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
-    user_id = callback_query.from_user.id
+async def remove_du
