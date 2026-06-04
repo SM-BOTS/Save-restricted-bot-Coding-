@@ -13,6 +13,7 @@ from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
 
+# Strict global text to filter out from anywhere
 BAD_NOTE_TEXT = "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
 
 class batch_temp(object):
@@ -66,7 +67,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒??𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗gs', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -177,10 +178,17 @@ async def save(client: Client, message: Message):
                     await client.send_message(message.chat.id, "The username is not occupied by anyone", reply_to_message_id=message.id)
                     return
                 try:
+                    # MASTER CAPTION FILTERING ON PUBLIC LINKS BACKUP
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
                     if copied_msg:
                         batch_temp.USER_FILES[message.from_user.id].append(copied_msg.id)
                         
+                        # Fix caption on public files if extra text somehow binds to it
+                        if copied_msg.caption and BAD_NOTE_TEXT in copied_msg.caption:
+                            new_cap = copied_msg.caption.replace(BAD_NOTE_TEXT, "").strip()
+                            try: await client.edit_message_caption(message.chat.id, copied_msg.id, caption=new_cap if new_cap else None)
+                            except: pass
+
                     user_dump = await get_dump_channel(message.from_user.id)
                     if user_dump and copied_msg:
                         try: await copied_msg.copy(chat_id=int(user_dump))
@@ -255,6 +263,7 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
+    # CAPTION SUPER CLEANER Logic (Zabardasti original caption ko filter out karega)
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
@@ -425,15 +434,4 @@ async def set_dump_callback(client, callback_query):
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             raw_id = response.text.strip()
-            channel_id = int(raw_id)
-            await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Dump Channel ID `{channel_id}` save ho gayi hai!")
-    except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me Channel ID bhejiye.")
-    except Exception as e:
-        await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
-
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = awai
+   
