@@ -66,7 +66,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒??𝚐𝚜', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -255,7 +255,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # Caption Filter: Makkhan jaise original aayega bina kisi extra notes ke
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
@@ -387,7 +386,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# FIXED BOT SETTINGS LOGIC WITH ESCAPED CHARACTERS
+# FINAL DIRECT DUMP CHANNEL SETTINGS
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -420,7 +419,7 @@ async def settings_callback(client, callback_query):
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
-    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1. Pehle bot ko apne channel me Admin bana lijiye.\n2. Phir apne channel ki ID (with -100) reply me bhejiye:"
+    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1. Pehle bot ko apne channel me Admin bana lijiye.\n2. Phir apne channel ki ID reply me bhejiye:"
     await client.send_message(chat_id=callback_query.from_user.id, text=txt)
     try:
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
@@ -435,4 +434,6 @@ async def set_dump_callback(client, callback_query):
         await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
-async def rem
+async def remove_dump_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = awai
