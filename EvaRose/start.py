@@ -65,9 +65,9 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton("❣️ Developer", url = "https://t.me/kingvj01")
         ],[
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
-            InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ𝙰ɴɴᴇʟ', url='https://t.me/vj_bots')
+            InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒念Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -147,8 +147,6 @@ async def save(client: Client, message: Message):
             acc = TechVJUser
 				
         batch_temp.IS_BATCH[message.from_user.id] = False
-        
-        # Reset current tracking batch
         batch_temp.USER_FILES[message.from_user.id] = []
 
         for msgid in range(fromID, toID+1):
@@ -182,7 +180,6 @@ async def save(client: Client, message: Message):
                     return
                 try:
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
-                    
                     if copied_msg:
                         batch_temp.USER_FILES[message.from_user.id].append(copied_msg.id)
                         
@@ -200,7 +197,14 @@ async def save(client: Client, message: Message):
             # wait time
             await asyncio.sleep(WAITING_TIME)
 
-        # 📢 TASK END NOTIFICATION
+        if LOGIN_SYSTEM == True:
+            try:
+                await acc.disconnect()
+            except:
+                pass                				
+        batch_temp.IS_BATCH[message.from_user.id] = True
+
+        # 📢 LOOP KE BAHAR EKDAM SAHI INDENTATION PAR NOTIFICATION SYSTEM (FIXED)
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -212,13 +216,6 @@ async def save(client: Client, message: Message):
                 asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
             except Exception as e:
                 print(f"Notification error: {e}")
-
-        if LOGIN_SYSTEM == True:
-            try:
-                await acc.disconnect()
-            except:
-                pass                				
-        batch_temp.IS_BATCH[message.from_user.id] = True
 
 
 # handle private & core uploading
@@ -326,7 +323,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    # Save target message IDs
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
 
@@ -446,10 +442,9 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    # 🌟 BRACKET CLOSED CORRECTLY AT THE END OF THIS CALL HERE
     await client.send_message(
         chat_id=callback_query.from_user.id,
-        text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
+        text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪regex:**
 
 1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.
 2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"""
@@ -463,4 +458,5 @@ async def set_dump_callback(client, callback_query):
             
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
- 
+    except ValueError:
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format
