@@ -66,7 +66,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒??𝚐𝚜', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -168,12 +168,12 @@ async def save(client: Client, message: Message):
                     if ERROR_MESSAGE == True:
                         await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             
-            # public links (FORCED FILTERING BY ROUTING TO PRIVATE HANDLER)
+            # public links (FIXED ACC PARAMETER PARAM)
             else:
                 username = datas[3]
                 try:
-                    # direct copy hata kar handler pe bhej rahe hain taaki filtering apply ho sake
-                    await handle_private(client, client, message, username, msgid)
+                    # Yahan client ki jagah acc pass hona zaroori tha taaki login string session perfectly work kare
+                    await handle_private(client, acc, message, username, msgid)
                 except Exception as e:
                     if ERROR_MESSAGE == True:
                         await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
@@ -214,7 +214,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     if "Text" == msg_type:
         try:
-            # Clean text if it is a pure text message
             text_msg = msg.text if msg.text else ""
             if BAD_NOTE_TEXT in text_msg:
                 text_msg = text_msg.replace(BAD_NOTE_TEXT, "").strip()
@@ -246,7 +245,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # STALKER CAPTION REMOVER (Makkhan Clean Filter)
+    # STALKER CAPTION REMOVER (Full Filter Working)
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
