@@ -67,7 +67,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒念Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -181,8 +181,6 @@ async def save(client: Client, message: Message):
                 try:
                     copied_msg = await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
                     if copied_msg:
-                        if message.from_user.id not in batch_temp.USER_FILES:
-                            batch_temp.USER_FILES[message.from_user.id] = []
                         batch_temp.USER_FILES[message.from_user.id].append(copied_msg.id)
                         
                     user_dump = await get_dump_channel(message.from_user.id)
@@ -206,7 +204,7 @@ async def save(client: Client, message: Message):
                 pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 📢 SARI FILES BATCH COMPLETE NOTIFICATION
+        # 📢 TASK COMPLETION NOTIFICATION LOGIC (Indentation fixed perfectly outside the loop)
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -235,8 +233,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
         try:
             sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
-                if message.from_user.id not in batch_temp.USER_FILES:
-                    batch_temp.USER_FILES[message.from_user.id] = []
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
             if user_dump and sent_msg:
                 try: await sent_msg.copy(int(user_dump))
@@ -328,8 +324,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
     if uploaded_msg:
-        if message.from_user.id not in batch_temp.USER_FILES:
-            batch_temp.USER_FILES[message.from_user.id] = []
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
 
     if uploaded_msg and user_dump:
@@ -460,4 +454,9 @@ async def set_dump_callback(client, callback_query):
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             raw_id = response.text.strip()
-            channel_id 
+            channel_id = int(raw_id)
+            
+            await set_dump_channel(callback_query.from_user.id, channel_id)
+            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
+    except ValueError:
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** S
