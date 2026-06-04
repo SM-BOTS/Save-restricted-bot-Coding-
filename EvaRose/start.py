@@ -17,10 +17,10 @@ from bot import TechVJUser
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
+    CUSTOM_CAPTIONS = {}  # Safe runtime storage to bypass DB schema crash on Koyeb
 
 # Caption cleaner and custom caption applier utility function
 async def clean_bad_caption(user_id, caption_text):
-    # 1. Pehle source channel ka ganda 5-min note saaf karega
     if caption_text:
         pattern = r"⏱️\s*\*?\*?Note:\*?\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\*?\(?5\s*minutes\)?\*?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
         cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
@@ -35,11 +35,10 @@ async def clean_bad_caption(user_id, caption_text):
     else:
         cleaned = ""
 
-    # 2. Ab check karega database me user ka koi Custom Caption set hai ya nahi
-    custom_cap = await db.get_caption(user_id) if hasattr(db, "get_caption") else None
+    # Fetch custom caption safely from memory mapping
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     if custom_cap:
-        # Agar user ne custom caption set kiya hai, toh original caption ke niche use jod dega
         if cleaned:
             return f"{cleaned}\n\n{custom_cap}"
         else:
@@ -268,7 +267,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # Clean incoming caption and inject custom branding caption if set
     caption = await clean_bad_caption(message.from_user.id, msg.caption)
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -395,14 +393,14 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# ADVANCED SETTINGS MENU (DUMP CHANNEL + CUSTOM CAPTION BUTTONS)
+# ADVANCED SETTINGS MENU FIXED FOR KOYEB
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, message):
     user_id = message.from_user.id
     dump_id = await get_dump_channel(user_id)
-    custom_cap = await db.get_caption(user_id) if hasattr(db, "get_caption") else None
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     text = "⚙️ **BOT SETTINGS MENU**\n\n"
     text += f"📢 **Dump Channel:** `{dump_id}`\n" if dump_id else "📢 **Dump Channel:** *Not Set*\n"
@@ -418,7 +416,7 @@ async def settings_cmd(client, message):
 async def settings_callback(client, callback_query):
     user_id = callback_query.from_user.id
     dump_id = await get_dump_channel(user_id)
-    custom_cap = await db.get_caption(user_id) if hasattr(db, "get_caption") else None
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     text = "⚙️ **BOT SETTINGS MENU**\n\n"
     text += f"📢 **Dump Channel:** `{dump_id}`\n" if dump_id else "📢 **Dump Channel:** *Not Set*\n"
@@ -433,9 +431,15 @@ async def settings_callback(client, callback_query):
     except MessageNotModified:
         await callback_query.answer("Aap pehle se hi settings menu me hain!")
 
-# Dump channel setters callbacks
+# Dump channel handlers
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     txt = "⚙️ **SET DUMP CHANNEL:**\n\n1. Pehle bot ko apne channel me Admin bana lijiye.\n2. Phir apne channel ki ID reply me bhejiye:"
-    await client.send_message(chat_id=callb
+    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
+    try:
+        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
+        if response and response.text:
+            raw_id = response.text.strip()
+            channel_id = int(raw_id)
+            await set_dump_channel(callbac
