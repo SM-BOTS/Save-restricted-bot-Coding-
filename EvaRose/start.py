@@ -67,7 +67,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐相应Settings', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -378,7 +378,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ Batch delete function with safe triple quotes
+# ⏱_ Batch delete function with safe triple quotes
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
@@ -442,7 +442,7 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    # 🔥 IS WALE RE-WRITTEN TEXT BLOCK KO PERFECT CLOSE KAR DIYA HAI BILKUL SAFALTA SE
+    # 👍 FIXED BRACKET: Is pure call ko perfect closed kar diya gaya hai bina kisi mismatch ke
     await client.send_message(
         chat_id=callback_query.from_user.id,
         text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
