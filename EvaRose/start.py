@@ -13,7 +13,6 @@ from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
 
-# Strict global filter string
 BAD_NOTE_TEXT = "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
 
 class batch_temp(object):
@@ -67,7 +66,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒** Settings', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ Bot Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -256,7 +255,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # Clean caption logic: Poore project se is note text ko clean karega forcefully
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
@@ -396,11 +394,11 @@ async def settings_cmd(client, message):
     user_id = message.from_user.id
     dump_id = await get_dump_channel(user_id)
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** _Not Set_"
         
-    buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
+    buttons = [[InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")]]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 @Client.on_callback_query(filters.regex("^settings_cmd$"))
@@ -408,11 +406,11 @@ async def settings_callback(client, callback_query):
     user_id = callback_query.from_user.id
     dump_id = await get_dump_channel(user_id)
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** _Not Set_"
         
-    buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
+    buttons = [[InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")]]
     try:
         await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     except MessageNotModified:
@@ -421,7 +419,7 @@ async def settings_callback(client, callback_query):
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
-    txt = "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪安定TA𝖱𝖨𝖪𝖠:**\n\n1️⃣ Pehle bot ko apne channel me Admin bana lijiye.\n2️⃣ Phir apne channel ki ID (Jaise -100xxxxxxxxxx) reply me bhejiye:"
+    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1️⃣ Pehle bot ko apne channel me Admin bana lijiye.\n2️⃣ Phir apne channel ki ID reply me bhejiye:"
     await client.send_message(chat_id=callback_query.from_user.id, text=txt)
     try:
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
@@ -431,4 +429,9 @@ async def set_dump_callback(client, callback_query):
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Channel ID `{channel_id}` save ho gayi hai!")
     except ValueError:
-        await client.send_message(callback_query.from_user
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID -100 se shuru hoti hai).")
+    except Exception as e:
+        await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
+
+@Client.on_callback_query(filters.regex("^rem_dump$"))
+async def remove_dump_callback(client,
