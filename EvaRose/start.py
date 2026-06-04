@@ -6,63 +6,7 @@ import os
 import asyncio
 import pyrogram
 import re
-from pyrogram import Client, filters, enums
-from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
-from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME
-from database.db import db, get_dump_channel, set_dump_channel
-from EvaRose.strings import HELP_TXT
-from bot import TechVJUser
 
-class batch_temp(object):
-    IS_BATCH = {}
-    USER_FILES = {}
-    CUSTOM_CAPTIONS = {}
-
-# Caption cleaner and custom caption applier utility function
-async def clean_bad_caption(user_id, caption_text):
-    if caption_text:
-        pattern = r"⏱️\s*\*?\*?Note:\*?\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\*?\(?5\s*minutes\)?\*?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
-        cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
-        
-        bad_strings = [
-            "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
-            "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
-        ]
-        for bad_str in bad_strings:
-            cleaned = cleaned.replace(bad_str, "")
-        cleaned = cleaned.strip()
-    else:
-        cleaned = ""
-
-    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    
-    if custom_cap:
-        if cleaned:
-            return f"{cleaned}\n\n{custom_cap}"
-        else:
-            return custom_cap
-            
-    return cleaned if cleaned else None
-
-async def downstatus(client, statusfile, message, chat):
-    while True:
-        if os.path.exists(statusfile):
-            break
-        await asyncio.sleep(3)
-      
-    while os.path.exists(statusfile):
-        with open(statusfile, "r") as downread:
-            txt = downread.read()
-        try:
-            await client.edit_message_text(message.chat.id, message.id, f"**Downloaded:** **{txt}**")
-            await asyncio.sleep(10)
-        except:
-            await asyncio.sleep(5)
-
-# upload status
-async def upstatus(client, statusfile, message, chat):
-    while True:
         if os.path.exists(statusfile):
             break
         await asyncio.sleep(3)      
