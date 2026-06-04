@@ -13,6 +13,7 @@ from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
 
+# Strict global text to target and wipe out completely
 BAD_NOTE_TEXT = "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
 
 class batch_temp(object):
@@ -66,7 +67,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒??𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ Bot Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -168,11 +169,10 @@ async def save(client: Client, message: Message):
                     if ERROR_MESSAGE == True:
                         await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             
-            # public links (FIXED ACC PARAMETER PARAM)
+            # public links
             else:
                 username = datas[3]
                 try:
-                    # Yahan client ki jagah acc pass hona zaroori tha taaki login string session perfectly work kare
                     await handle_private(client, acc, message, username, msgid)
                 except Exception as e:
                     if ERROR_MESSAGE == True:
@@ -245,7 +245,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # STALKER CAPTION REMOVER (Full Filter Working)
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
@@ -314,8 +313,15 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
+    # 🔥 THE ULTIMATE OVERRIDE FILTER: Agar koi doosri file force karke text jod bhi degi, toh bot use send hone ke JUST BAAD instant clean kar dega
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+        if uploaded_msg.caption and BAD_NOTE_TEXT in uploaded_msg.caption:
+            clean_cap = uploaded_msg.caption.replace(BAD_NOTE_TEXT, "").strip()
+            try:
+                await client.edit_message_caption(chat_id=chat, message_id=uploaded_msg.id, caption=clean_cap if clean_cap else None)
+            except:
+                pass
 
     if uploaded_msg and user_dump:
         try:
@@ -432,7 +438,4 @@ async def remove_dump_callback(client, callback_query):
         await callback_query.answer("⚠️ Aapka koi channel set nahi hai!", show_alert=True)
         return
     await set_dump_channel(user_id, None)
-    try:
-        await callback_query.message.edit_text("❌ **Dump Channel successfully remove kar diya gaya hai!**")
-    except MessageNotModified:
-        pass
+   
