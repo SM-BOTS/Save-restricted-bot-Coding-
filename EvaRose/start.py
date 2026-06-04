@@ -13,9 +13,6 @@ from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
 
-# Strict global text to target and wipe out completely
-BAD_NOTE_TEXT = "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
-
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
@@ -188,13 +185,13 @@ async def save(client: Client, message: Message):
                 pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 📢 BATCH COMPLETE NOTIFICATION
+        # 📢 BATCH COMPLETE ALERT (CLEANED UP - NO MORE 5 MINUTE TEXT)
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
                 notif_msg = await client.send_message(
                     chat_id=message.chat.id,
-                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe forward kar lein."
+                    text=f"✅ **Task Completed! Total {total_sent} files processed successfully.**"
                 )
                 all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
                 asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
@@ -214,11 +211,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     if "Text" == msg_type:
         try:
-            text_msg = msg.text if msg.text else ""
-            if BAD_NOTE_TEXT in text_msg:
-                text_msg = text_msg.replace(BAD_NOTE_TEXT, "").strip()
-
-            sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            sent_msg = await client.send_message(chat, msg.text, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
             if user_dump and sent_msg:
@@ -245,11 +238,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    caption = msg.caption if msg.caption else ""
-    if BAD_NOTE_TEXT in caption:
-        caption = caption.replace(BAD_NOTE_TEXT, "").strip()
-    if caption == "":
-        caption = None
+    # Caption is strictly kept original
+    caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
@@ -313,15 +303,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    # 🔥 THE ULTIMATE OVERRIDE FILTER: Agar koi doosri file force karke text jod bhi degi, toh bot use send hone ke JUST BAAD instant clean kar dega
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
-        if uploaded_msg.caption and BAD_NOTE_TEXT in uploaded_msg.caption:
-            clean_cap = uploaded_msg.caption.replace(BAD_NOTE_TEXT, "").strip()
-            try:
-                await client.edit_message_caption(chat_id=chat, message_id=uploaded_msg.id, caption=clean_cap if clean_cap else None)
-            except:
-                pass
 
     if uploaded_msg and user_dump:
         try:
@@ -378,7 +361,6 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
         await client.delete_messages(chat_id, message_ids)
-        await client.send_message(chat_id=chat_id, text="🚨 **Batch Files Cleaned Up!**\n\nSaari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼")
     except Exception as e:
         print(f"Batch Auto-delete error: {e}")
 
@@ -438,4 +420,7 @@ async def remove_dump_callback(client, callback_query):
         await callback_query.answer("⚠️ Aapka koi channel set nahi hai!", show_alert=True)
         return
     await set_dump_channel(user_id, None)
-   
+    try:
+        await callback_query.message.edit_text("❌ **Dump Channel successfully remove kar diya gaya hai!**")
+    except MessageNotModified:
+        pass
