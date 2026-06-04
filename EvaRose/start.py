@@ -17,7 +17,7 @@ from bot import TechVJUser
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
-    CUSTOM_CAPTIONS = {}  # Safe runtime storage to bypass DB schema crash on Koyeb
+    CUSTOM_CAPTIONS = {}
 
 # Caption cleaner and custom caption applier utility function
 async def clean_bad_caption(user_id, caption_text):
@@ -35,7 +35,6 @@ async def clean_bad_caption(user_id, caption_text):
     else:
         cleaned = ""
 
-    # Fetch custom caption safely from memory mapping
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     if custom_cap:
@@ -393,7 +392,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# ADVANCED SETTINGS MENU FIXED FOR KOYEB
+# ADVANCED SETTINGS MENU FIXED
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -442,4 +441,5 @@ async def set_dump_callback(client, callback_query):
         if response and response.text:
             raw_id = response.text.strip()
             channel_id = int(raw_id)
-            await set_dump_channel(callbac
+            await set_dump_channel(callback_query.from_user.id, channel_id)
+            await response.reply_text(f"✅ **Success!** Dump Channel ID `{channel_id}` sav
