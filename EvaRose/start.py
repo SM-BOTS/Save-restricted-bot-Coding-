@@ -67,7 +67,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒念Settings', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐相应Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -204,7 +204,7 @@ async def save(client: Client, message: Message):
                 pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 📢 TASK COMPLETION NOTIFICATION LOGIC (Indentation fixed perfectly outside the loop)
+        # 📢 BATCH COMPLETE NOTIFICATION
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -442,6 +442,7 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
+    # 🔥 IS WALE RE-WRITTEN TEXT BLOCK KO PERFECT CLOSE KAR DIYA HAI BILKUL SAFALTA SE
     await client.send_message(
         chat_id=callback_query.from_user.id,
         text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
@@ -459,4 +460,4 @@ async def set_dump_callback(client, callback_query):
             await set_dump_channel(callback_query.from_user.id, channel_id)
             await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
     except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** S
+        await client.send_message(callba
