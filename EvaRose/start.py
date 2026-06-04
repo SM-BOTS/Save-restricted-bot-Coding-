@@ -22,7 +22,7 @@ class batch_temp(object):
 # Caption cleaner utility function
 async def clean_bad_caption(user_id, caption_text):
     if caption_text:
-        pattern = r"⏱️\s*\*?\*?Note:\*?\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\*?\(?5\s*minutes\)?\*?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+        pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
         cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
         bad_strings = [
             "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
@@ -83,7 +83,8 @@ async def send_start(client: Client, message: Message):
         [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀ體 ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")],
         [InlineKeyboardButton("⚙️ Bot Settings", callback_data="settings_cmd")]
     ]
-    await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot.\n\nUse /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
 
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
@@ -101,13 +102,16 @@ async def save(client: Client, message: Message):
             await client.send_message(message.chat.id, "String Session is not Set", reply_to_message_id=message.id)
             return
         try:
-            try: await TechVJUser.join_chat(message.text)
+            try:
+                await TechVJUser.join_chat(message.text)
             except Exception as e: 
                 await client.send_message(message.chat.id, f"Error : {e}", reply_to_message_id=message.id)
                 return
             await client.send_message(message.chat.id, "Chat Joined", reply_to_message_id=message.id)
-        except UserAlreadyParticipant: await client.send_message(message.chat.id, "Chat already Joined", reply_to_message_id=message.id)
-        except InviteHashExpired: await client.send_message(message.chat.id, "Invalid Link", reply_to_message_id=message.id)
+        except UserAlreadyParticipant:
+            await client.send_message(message.chat.id, "Chat already Joined", reply_to_message_id=message.id)
+        except InviteHashExpired:
+            await client.send_message(message.chat.id, "Invalid Link", reply_to_message_id=message.id)
         return
     
     if "https://t.me/" in message.text:
@@ -116,8 +120,10 @@ async def save(client: Client, message: Message):
         datas = message.text.split("/")
         temp = datas[-1].replace("?single","").split("-")
         fromID = int(temp[0].strip())
-        try: toID = int(temp[1].strip())
-        except: toID = fromID
+        try:
+            toID = int(temp[1].strip())
+        except:
+            toID = fromID
 
         if LOGIN_SYSTEM == True:
             user_data = await db.get_session(message.from_user.id)
@@ -129,7 +135,8 @@ async def save(client: Client, message: Message):
             try:
                 acc = Client("saverestricted", session_string=user_data, api_hash=api_hash, api_id=api_id)
                 await acc.connect()
-            except: return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
+            except:
+                return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
         else:
             if TechVJUser is None:
                 await client.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
@@ -140,27 +147,36 @@ async def save(client: Client, message: Message):
         batch_temp.USER_FILES[message.from_user.id] = []
 
         for msgid in range(fromID, toID+1):
-            if batch_temp.IS_BATCH.get(message.from_user.id): break
+            if batch_temp.IS_BATCH.get(message.from_user.id):
+                break
             if "https://t.me/c/" in message.text:
                 chatid = int("-100" + datas[4])
-                try: await handle_private(client, acc, message, chatid, msgid)
+                try:
+                    await handle_private(client, acc, message, chatid, msgid)
                 except Exception as e:
-                    if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
+                    if ERROR_MESSAGE == True:
+                        await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             elif "https://t.me/b/" in message.text:
                 username = datas[4]
-                try: await handle_private(client, acc, message, username, msgid)
+                try:
+                    await handle_private(client, acc, message, username, msgid)
                 except Exception as e:
-                    if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
+                    if ERROR_MESSAGE == True:
+                        await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             else:
                 username = datas[3]
-                try: await handle_private(client, acc, message, username, msgid)
+                try:
+                    await handle_private(client, acc, message, username, msgid)
                 except Exception as e:
-                    if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
+                    if ERROR_MESSAGE == True:
+                        await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
             await asyncio.sleep(WAITING_TIME)
 
         if LOGIN_SYSTEM == True:
-            try: await acc.disconnect()
-            except: pass                				
+            try:
+                await acc.disconnect()
+            except:
+                pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
         if batch_temp.USER_FILES.get(message.from_user.id):
@@ -169,93 +185,136 @@ async def save(client: Client, message: Message):
                 notif_msg = await client.send_message(chat_id=message.chat.id, text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe forward kar lein.")
                 all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
                 asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
-            except Exception as e: print(f"Notification error: {e}")
+            except Exception as e:
+                print(f"Notification error: {e}")
 
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
-    if msg.empty: return 
+    if msg.empty:
+        return 
     msg_type = get_message_type(msg)
-    if not msg_type: return 
+    if not msg_type:
+        return 
 
     chat = message.chat.id
     user_dump = await get_dump_channel(message.from_user.id)
 
-    if batch_temp.IS_BATCH.get(message.from_user.id): return 
+    if batch_temp.IS_BATCH.get(message.from_user.id):
+        return 
     if "Text" == msg_type:
         try:
             text_msg = await clean_bad_caption(message.from_user.id, msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-            if sent_msg: batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
+            if sent_msg:
+                batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
             if user_dump and sent_msg:
-                try: await sent_msg.copy(int(user_dump))
-                except: pass
+                try:
+                    await sent_msg.copy(int(user_dump))
+                except:
+                    pass
             return 
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             return 
 
     smsg = await client.send_message(message.chat.id, '**Downloading...**', reply_to_message_id=message.id)
     asyncio.create_task(downstatus(client, f'{message.id}downstatus.txt', smsg, chat))
     try:
         file = await acc.download_media(msg, progress=progress, progress_args=[message,"down"])
-        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
+        if os.path.exists(f'{message.id}downstatus.txt'):
+            os.remove(f'{message.id}downstatus.txt')
     except Exception as e:
-        if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML) 
-        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
+        if ERROR_MESSAGE == True:
+            await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML) 
+        if os.path.exists(f'{message.id}downstatus.txt'):
+            os.remove(f'{message.id}downstatus.txt')
         return await smsg.delete()
         
-    if batch_temp.IS_BATCH.get(message.from_user.id): return 
+    if batch_temp.IS_BATCH.get(message.from_user.id):
+        return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
     caption = await clean_bad_caption(message.from_user.id, msg.caption)
-    if batch_temp.IS_BATCH.get(message.from_user.id): return 
+    if batch_temp.IS_BATCH.get(message.from_user.id):
+        return 
             
     uploaded_msg = None
     if "Document" == msg_type:
-        try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
-        except: ph_path = None
-        try: uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        try:
+            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None: os.remove(ph_path)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
     elif "Video" == msg_type:
-        try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
-        except: ph_path = None
-        try: uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        try:
+            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None: os.remove(ph_path)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
     elif "Animation" == msg_type:
-        try: uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        try:
+            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     elif "Sticker" == msg_type:
-        try: uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        try:
+            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
     elif "Voice" == msg_type:
-        try: uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        try:
+            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     elif "Audio" == msg_type:
-        try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
-        except: ph_path = None
-        try: uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
+        try:
+            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None: os.remove(ph_path)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
     elif "Photo" == msg_type:
-        try: uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        try:
+            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
-            if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    if uploaded_msg: batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+    if uploaded_msg:
+        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
     if uploaded_msg and user_dump:
-        try: await uploaded_msg.copy(chat_id=int(user_dump))
-        except Exception as e: print(f"Dump forward error: {e}")
-    if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(file): os.remove(file)
-    try: await client.delete_messages(message.chat.id, [smsg.id])
-    except: pass
+        try:
+            await uploaded_msg.copy(chat_id=int(user_dump))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
+    if os.path.exists(f'{message.id}upstatus.txt'):
+        os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(file):
+        os.remove(file)
+    try:
+        await client.delete_messages(message.chat.id, [smsg.id])
+    except:
+        pass
 
 def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     try:
@@ -293,11 +352,13 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
 
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
-    try: await client.delete_messages(chat_id, message_ids)
-    except Exception as e: print(f"Batch Auto-delete error: {e}")
+    try:
+        await client.delete_messages(chat_id, message_ids)
+    except Exception as e:
+        print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# SETTINGS BACKEND ROUTINES (100% EXPLICIT COMPLIANCE)
+# SETTINGS ACTIONS CALLBACK INTERACTION REGION
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -307,10 +368,14 @@ async def settings_cmd(client, message):
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     text = "⚙️ **BOT SETTINGS MENU**\n\n"
-    if dump_id: text += f"📢 **Dump Channel:** `{dump_id}`\n"
-    else: text += "📢 **Dump Channel:** *Not Set*\n"
-    if custom_cap: text += f"📝 **Custom Caption:** `{custom_cap}`"
-    else: text += "📝 **Custom Caption:** *Not Set*"
+    if dump_id:
+        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+    else:
+        text += "📢 **Dump Channel:** *Not Set*\n"
+    if custom_cap:
+        text += f"📝 **Custom Caption:** `{custom_cap}`"
+    else:
+        text += "📝 **Custom Caption:** *Not Set*"
         
     buttons = [
         [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
@@ -325,17 +390,23 @@ async def settings_callback(client, callback_query):
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
     text = "⚙️ **BOT SETTINGS MENU**\n\n"
-    if dump_id: text += f"📢 **Dump Channel:** `{dump_id}`\n"
-    else: text += "📢 **Dump Channel:** *Not Set*\n"
-    if custom_cap: text += f"📝 **Custom Caption:** `{custom_cap}`"
-    else: text += "📝 **Custom Caption:** *Not Set*"
+    if dump_id:
+        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+    else:
+        text += "📢 **Dump Channel:** *Not Set*\n"
+    if custom_cap:
+        text += f"📝 **Custom Caption:** `{custom_cap}`"
+    else:
+        text += "📝 **Custom Caption:** *Not Set*"
         
     buttons = [
         [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
         [InlineKeyboardButton("✍️ SET CAPTION", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ REMOVE CAPTION", callback_data="rem_caption")]
     ]
-    try: await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    except MessageNotModified: await callback_query.answer("Aap pehle se hi settings menu me hain!")
+    try:
+        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    except MessageNotModified:
+        await callback_query.answer("Aap pehle se hi settings menu me hain!")
 
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
@@ -347,7 +418,7 @@ async def set_dump_callback(client, callback_query):
         if response and response.text:
             channel_id = int(response.text.strip())
             await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Dump Channel ID save ho gayi hai.")
+            await response.reply_text("✅ **Success!** Dump Channel ID save ho gayi hai.")
     except Exception as e:
         await client.send_message(callback_query.from_user.id, f"⏱️ **Error:** {e}")
 
@@ -355,23 +426,4 @@ async def set_dump_callback(client, callback_query):
 async def remove_dump_callback(client, callback_query):
     try:
         await set_dump_channel(callback_query.from_user.id, None)
-        await callback_query.message.edit_text("❌ **Dump Channel successfully remove kar diya gaya hai!**")
-    except Exception as e:
-        await callback_query.answer(f"Error: {e}")
-
-@Client.on_callback_query(filters.regex("^set_caption_info$"))
-async def set_caption_callback(client, callback_query):
-    await callback_query.message.delete()
-    txt = "✍️ **SET CUSTOM CAPTION:**\n\nApna jo bhi text lagana chahte hain, use reply me bhejiye:"
-    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
-    try:
-        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
-        if response and response.text:
-            custom_text = response.text.strip()
-            batch_temp.CUSTOM_CAPTIONS[callback_query.from_user.id] = custom_text
-            await response.reply_text("✅ **Success!** Custom caption save ho gaya.")
-    except Exception as e:
-        await client.send_message(callback_query.from_user.id, f"⏱️ **Error:** {e}")
-
-@Client.on_callback_query(filters.regex("^rem_caption$"))
-async def re
+        await callback_query.message.edit_text("❌ **Dump Channel successf
