@@ -65,7 +65,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton("❣️ Developer", url = "https://t.me/kingvj01")
         ],[
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
-            InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
+            InlineKeyboardButton('🤖 ᴜᴘ调ᴅᴀᴛᴇ ᴄʜᴀregisteredɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
             InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
         ]
@@ -148,7 +148,7 @@ async def save(client: Client, message: Message):
 				
         batch_temp.IS_BATCH[message.from_user.id] = False
         
-        # Reset current tracking batch
+        # Reset batch file ids list
         batch_temp.USER_FILES[message.from_user.id] = []
 
         for msgid in range(fromID, toID+1):
@@ -200,7 +200,7 @@ async def save(client: Client, message: Message):
             # wait time
             await asyncio.sleep(WAITING_TIME)
 
-        # 📢 TASK END NOTIFICATION (Caption se hat kar aakhiri me notification)
+        # 📢 End batch notification logic
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -261,7 +261,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # Caption original rahega bilkul safa
     caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -327,7 +326,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
-    # Save target message IDs
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
 
@@ -383,7 +381,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-# ⏱️ CLEAN BATCH TIMER (TRIPLE QUOTES APPLIED)
+# ⏱️ Batch delete function with safe triple quotes
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
@@ -447,7 +445,6 @@ async def settings_callback(client, callback_query):
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
     
-    # TRIPLE QUOTES FIXED FOR THE STRING ERROR SEEN IN LOGS
     await client.send_message(
         chat_id=callback_query.from_user.id,
         text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
@@ -463,4 +460,6 @@ async def set_dump_callback(client, callback_query):
             channel_id = int(raw_id)
             
             await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_i
+            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
+    except ValueError:
+        await client.send_message(callback_query.from_use
