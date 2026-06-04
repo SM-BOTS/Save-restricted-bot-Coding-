@@ -36,7 +36,6 @@ async def clean_bad_caption(user_id, caption_text):
         cleaned = ""
 
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    
     if custom_cap:
         if cleaned:
             return f"{cleaned}\n\n{custom_cap}"
@@ -225,7 +224,7 @@ async def save(client: Client, message: Message):
             except Exception as e:
                 print(f"Notification error: {e}")
 
-# handle private & core uploading (FIXED TRY-EXCEPT INDENTATION STRUCTURE)
+# handle private & core uploading
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty: return 
@@ -392,7 +391,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# ADVANCED SETTINGS MENU FIXED Layout
+# SETTINGS CORE ROUTINES (100% PROPER INDENTATION)
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -444,7 +443,6 @@ async def settings_callback(client, callback_query):
     except MessageNotModified:
         await callback_query.answer("Aap pehle se hi settings menu me hain!")
 
-# Dump channel handlers
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
@@ -454,4 +452,5 @@ async def set_dump_callback(client, callback_query):
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             raw_id = response.text.strip()
-            chan
+            channel_id = int(raw_id)
+            await set_dump_channel(c
