@@ -253,7 +253,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # 🛑 STRICT CAPTION CLEANING LOGIC (Zabardasti original caption pass hoga)
     caption = msg.caption if msg.caption else None
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -389,9 +388,9 @@ async def settings_cmd(client, message):
     user_id = message.from_user.id
     dump_id = await get_dump_channel(user_id)
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸??𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸??𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
     buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -401,9 +400,9 @@ async def settings_callback(client, callback_query):
     user_id = callback_query.from_user.id
     dump_id = await get_dump_channel(user_id)
     if dump_id:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸??𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸??𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
     buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
     try:
@@ -429,4 +428,6 @@ async def set_dump_callback(client, callback_query):
         await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_du
+async def remove_dump_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+	
