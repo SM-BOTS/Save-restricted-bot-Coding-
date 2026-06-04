@@ -18,18 +18,13 @@ class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
 
-# FIXED CAPTION CLEANER LOGIC WITH CORRECT BOLD FORMATTING PATTERN
+# Caption cleaner utility function for files
 def clean_bad_caption(caption_text):
     if not caption_text:
         return None
-    
-    # Yeh pattern bold asterisks (**) aur emojis dono ko sahi se handle karega
     pattern = r"⏱️\s*\*?\*?Note:\*?\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\*?\(?5\s*minutes\)?\*?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
-    
-    # 1. Pehle exact pattern clean karega
     cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
     
-    # 2. Backup filter: Agar kisi wajah se pattern miss bhi ho, toh direct string replace se saaf karega
     bad_strings = [
         "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
         "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
@@ -208,12 +203,13 @@ async def save(client: Client, message: Message):
                 pass                				
         batch_temp.IS_BATCH[message.from_user.id] = True
 
+        # 📢 BATCH COMPLETE NOTIFICATION WITH AUTO-DELETE MESSAGE ALERT
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
                 notif_msg = await client.send_message(
                     chat_id=message.chat.id,
-                    text=f"✅ **Task Completed! Total {total_sent} files processed successfully.**"
+                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe forward kar lein."
                 )
                 all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
                 asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
@@ -261,7 +257,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
-    # ENHANCED CLEANING MECHANISM FOR INCOMING MESSAGES
     caption = clean_bad_caption(msg.caption)
         
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
@@ -379,7 +374,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-# Batch delete function
+# Automatic Batch delete executor (Runs strictly after 300 seconds)
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
