@@ -32,7 +32,6 @@ async def downstatus(client, statusfile, message, chat):
         except:
             await asyncio.sleep(5)
 
-
 # upload status
 async def upstatus(client, statusfile, message, chat):
     while True:
@@ -48,12 +47,10 @@ async def upstatus(client, statusfile, message, chat):
         except:
             await asyncio.sleep(5)
 
-
 # progress writer
 def progress(current, total, message, type):
     with open(f'{message.id}{type}status.txt', "w") as fileup:
         fileup.write(f"{current * 100 / total:.1f}%")
-
 
 # start command
 @Client.on_message(filters.command(["start"]))
@@ -67,7 +64,7 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
         ],[
-            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒𝚗𝚐𝚜', callback_data='settings_cmd') 
+            InlineKeyboardButton('⚙️ 𝙱𝚘𝚝 𝚂𝚎𝚝𝚝𝚒** Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -78,7 +75,6 @@ async def send_start(client: Client, message: Message):
         reply_to_message_id=message.id
     )
     return
-
 
 # help command
 @Client.on_message(filters.command(["help"]))
@@ -217,7 +213,6 @@ async def save(client: Client, message: Message):
             except Exception as e:
                 print(f"Notification error: {e}")
 
-
 # handle private & core uploading
 async def handle_private(client: Client, acc, message: Message, chatid: int, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
@@ -274,7 +269,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None: os.remove(ph_path)
         
-
     elif "Video" == msg_type:
         try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
         except: ph_path = None
@@ -341,7 +335,6 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     except:
         pass
 
-
 # get the type of message
 def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     try:
@@ -377,21 +370,14 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-
-# ⏱_ Batch delete function with safe triple quotes
+# ⏱️ Batch delete function
 async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
         await client.delete_messages(chat_id, message_ids)
-        await client.send_message(
-            chat_id=chat_id,
-            text="""🚨 **Batch Files Cleaned Up!**
-
-Copyright security reasons ki wajah se saari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼"""
-        )
+        await client.send_message(chat_id=chat_id, text="🚨 **Batch Files Cleaned Up!**\n\nCopyright security reasons ki wajah se saari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼")
     except Exception as e:
         print(f"Batch Auto-delete error: {e}")
-
 
 # ----------------------------------------------------
 # FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
@@ -401,63 +387,46 @@ Copyright security reasons ki wajah se saari files aur completion alert chat se 
 async def settings_cmd(client, message):
     user_id = message.from_user.id
     dump_id = await get_dump_channel(user_id)
-    
     if dump_id:
-        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
-    buttons = [
-        [
-            InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")
-        ]
-    ]
+    buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-
 
 @Client.on_callback_query(filters.regex("^settings_cmd$"))
 async def settings_callback(client, callback_query):
     user_id = callback_query.from_user.id
     dump_id = await get_dump_channel(user_id)
-    
     if dump_id:
-        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** `{dump_id}`"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** `{dump_id}`"
     else:
-        text = f"**⚙️ 𝖡𝖮𝖳 𝖲𝖤𝖳𝖳𝖨𝖭𝖦𝖲**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
+        text = f"**⚙️ 𝙱𝙾𝚃 𝚂𝙴𝚃𝚃𝙸𝙽𝙶𝚂**\n\n📢 **Current Channel:** _Abhi set nahi hai (Not Set)_"
         
-    buttons = [
-        [
-            InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"),
-            InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")
-        ]
-    ]
+    buttons = [[InlineKeyboardButton("⚙️ 𝖲𝖤𝖳 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝖱𝖤𝖬𝖮𝖵𝖤 𝖢𝖧𝖭𝖭𝖤𝖫", callback_data="rem_dump")]]
     try:
         await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     except MessageNotModified:
         await callback_query.answer("Aap pehle se hi settings menu me hain! 😉")
 
-
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
-    
-    # 👍 FIXED BRACKET: Is pure call ko perfect closed kar diya gaya hai bina kisi mismatch ke
-    await client.send_message(
-        chat_id=callback_query.from_user.id,
-        text="""⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**
-
-1️⃣ Pehle bot ko apne channel me **Admin** bana lijiye.
-2️⃣ Phir apne channel ki ID (Jaise `-100xxxxxxxxxx`) direct yahan niche reply me bhejiye:"""
-    )
-    
+    txt = "⚙️ **𝖢𝖧𝖠𝖭𝖭𝖤𝖫 𝖲𝖤𝖳 𝖪𝖠𝖱𝖭𝖤 𝖪𝖠 𝖳𝖠𝖱𝖨𝖪𝖠:**\n\n1️⃣ Pehle bot ko apne channel me Admin bana lijiye.\n2️⃣ Phir apne channel ki ID (Jaise -100xxxxxxxxxx) reply me bhejiye:"
+    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
     try:
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             raw_id = response.text.strip()
             channel_id = int(raw_id)
-            
             await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Aapki Dump Channel ID (`{channel_id}`) successfully save ho gayi hai!\nAb aap /settings check kar sakte hain.")
+            await response.reply_text(f"✅ **Success!** Aapki Channel ID `{channel_id}` save ho gayi hai!")
     except ValueError:
-        await client.send_message(callba
+        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID -100 se shuru hoti hai).")
+    except Exception as e:
+        await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
+
+@Client.on_callback_query(filters.regex("^rem_dump$"))
+async def remove_dump_callback(client, callback_query):
+    user_id = callback_query.from_user.id
