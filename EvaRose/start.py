@@ -65,8 +65,6 @@ async def send_start(client: Client, message: Message):
         ],[
             InlineKeyboardButton('🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/vj_bot_disscussion'),
             InlineKeyboardButton('🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/vj_bots')
-        ],[
-            InlineKeyboardButton('⚙️ Bot Settings', callback_data='settings_cmd') 
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -255,6 +253,7 @@ async def handle_private(client: Client, acc, message: Message, chatid: int, msg
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
 
+    # Caption Cleaning Logic
     caption = msg.caption if msg.caption else ""
     if BAD_NOTE_TEXT in caption:
         caption = caption.replace(BAD_NOTE_TEXT, "").strip()
@@ -381,57 +380,6 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     await asyncio.sleep(delay)
     try:
         await client.delete_messages(chat_id, message_ids)
-        await client.send_message(chat_id=chat_id, text="🚨 **Batch Files Cleaned Up!**\n\nCopyright security reasons ki wajah se saari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼")
+        await client.send_message(chat_id=chat_id, text="🚨 **Batch Files Cleaned Up!**\n\nSaari files aur completion alert chat se successfully delete kar diye gaye hain! 🧼")
     except Exception as e:
         print(f"Batch Auto-delete error: {e}")
-
-# ----------------------------------------------------
-# FINAL DIRECT DUMP CHANNEL SETTINGS BY EVAROSE
-# ----------------------------------------------------
-
-@Client.on_message(filters.command("settings") & filters.private)
-async def settings_cmd(client, message):
-    user_id = message.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    if dump_id:
-        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** `{dump_id}`"
-    else:
-        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** _Not Set_"
-        
-    buttons = [[InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")]]
-    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-
-@Client.on_callback_query(filters.regex("^settings_cmd$"))
-async def settings_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    if dump_id:
-        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** `{dump_id}`"
-    else:
-        text = f"**⚙️ BOT SETTINGS**\n\n📢 **Current Channel:** _Not Set_"
-        
-    buttons = [[InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")]]
-    try:
-        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    except MessageNotModified:
-        await callback_query.answer("Aap pehle se hi settings menu me hain! 😉")
-
-@Client.on_callback_query(filters.regex("^set_dump_info$"))
-async def set_dump_callback(client, callback_query):
-    await callback_query.message.delete()
-    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1️⃣ Pehle bot ko apne channel me Admin bana lijiye.\n2️⃣ Phir apne channel ki ID reply me bhejiye:"
-    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
-    try:
-        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
-        if response and response.text:
-            raw_id = response.text.strip()
-            channel_id = int(raw_id)
-            await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text(f"✅ **Success!** Aapki Channel ID `{channel_id}` save ho gayi hai!")
-    except ValueError:
-        await client.send_message(callback_query.from_user.id, "❌ **Error:** Sahi format me sirf Channel ID bhejiye (ID -100 se shuru hoti hai).")
-    except Exception as e:
-        await client.send_message(callback_query.from_user.id, f"⏱️ **Timeout ya Error:** {e}")
-
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client,
