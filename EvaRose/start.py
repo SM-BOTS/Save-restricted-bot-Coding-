@@ -225,7 +225,7 @@ async def save(client: Client, message: Message):
             except Exception as e:
                 print(f"Notification error: {e}")
 
-# handle private & core uploading
+# handle private & core uploading (FIXED TRY-EXCEPT INDENTATION STRUCTURE)
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty: return 
@@ -317,4 +317,141 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
         except: ph_path = None
         try:
-            uploaded_msg = await client.send
+            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None: os.remove(ph_path)
+
+    elif "Photo" == msg_type:
+        try:
+            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+    
+    if uploaded_msg:
+        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+
+    if uploaded_msg and user_dump:
+        try:
+            await uploaded_msg.copy(chat_id=int(user_dump))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
+
+    if os.path.exists(f'{message.id}upstatus.txt'): 
+        os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(file):
+        os.remove(file)
+    try:
+        await client.delete_messages(message.chat.id, [smsg.id])
+    except:
+        pass
+
+# get the type of message
+def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
+    try:
+        msg.document.file_id
+        return "Document"
+    except: pass
+    try:
+        msg.video.file_id
+        return "Video"
+    except: pass
+    try:
+        msg.animation.file_id
+        return "Animation"
+    except: pass
+    try:
+        msg.sticker.file_id
+        return "Sticker"
+    except: pass
+    try:
+        msg.voice.file_id
+        return "Voice"
+    except: pass
+    try:
+        msg.audio.file_id
+        return "Audio"
+    except: pass
+    try:
+        msg.photo.file_id
+        return "Photo"
+    except: pass
+    try:
+        msg.text
+        return "Text"
+    except: pass
+
+# Batch delete function
+async def auto_delete_batch(client, chat_id, message_ids, delay=300):
+    await asyncio.sleep(delay)
+    try:
+        await client.delete_messages(chat_id, message_ids)
+    except Exception as e:
+        print(f"Batch Auto-delete error: {e}")
+
+# ----------------------------------------------------
+# ADVANCED SETTINGS MENU FIXED Layout
+# ----------------------------------------------------
+
+@Client.on_message(filters.command("settings") & filters.private)
+async def settings_cmd(client, message):
+    user_id = message.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
+    
+    text = "⚙️ **BOT SETTINGS MENU**\n\n"
+    if dump_id:
+        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+    else:
+        text += "📢 **Dump Channel:** *Not Set*\n"
+        
+    if custom_cap:
+        text += f"📝 **Custom Caption:** `{custom_cap}`"
+    else:
+        text += "📝 **Custom Caption:** *Not Set*"
+        
+    buttons = [
+        [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
+        [InlineKeyboardButton("✍️ SET CAPTION", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ REMOVE CAPTION", callback_data="rem_caption")]
+    ]
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+@Client.on_callback_query(filters.regex("^settings_cmd$"))
+async def settings_callback(client, callback_query):
+    user_id = callback_query.from_user.id
+    dump_id = await get_dump_channel(user_id)
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
+    
+    text = "⚙️ **BOT SETTINGS MENU**\n\n"
+    if dump_id:
+        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+    else:
+        text += "📢 **Dump Channel:** *Not Set*\n"
+        
+    if custom_cap:
+        text += f"📝 **Custom Caption:** `{custom_cap}`"
+    else:
+        text += "📝 **Custom Caption:** *Not Set*"
+        
+    buttons = [
+        [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
+        [InlineKeyboardButton("✍️ SET CAPTION", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ REMOVE CAPTION", callback_data="rem_caption")]
+    ]
+    try:
+        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    except MessageNotModified:
+        await callback_query.answer("Aap pehle se hi settings menu me hain!")
+
+# Dump channel handlers
+@Client.on_callback_query(filters.regex("^set_dump_info$"))
+async def set_dump_callback(client, callback_query):
+    await callback_query.message.delete()
+    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1. Pehle bot ko apne channel me Admin bana lijiye.\n2. Phir apne channel ki ID reply me bhejiye:"
+    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
+    try:
+        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
+        if response and response.text:
+            raw_id = response.text.strip()
+            chan
