@@ -393,36 +393,101 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 # 🔘 Updates Callback Query Handler
-@Client.on_message(filters.command(["start"]))
-async def send_start(client: Client, message: Message):
-    if not await db.is_user_exist(message.from_user.id):
-        await db.add_user(message.from_user.id, message.from_user.first_name)
+@Client.on_callback_query()
+async def callback_handler(client, query: CallbackQuery):
+    user_id = query.from_user.id
+
+    if query.data == "settings":
+        # Pyrogram me callback button click hone par loading state hatane ke liye pehle answer karte hain
+        await query.answer()
         
-    buttons = [
-        [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
-        [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-        [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
-    ]
-    reply_markup = InlineKeyboardMarkup(buttons)
-    
-    welcome_text = f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
-    
-    # 🖼️ Agar START_IMAGE_SHOW True hai aur URL maujood hai toh photo jayegi
-    if START_IMAGE_SHOW == True and START_IMAGE_URL:
+        user_dump = await get_dump_channel(user_id)
+        current_status = f"`{user_dump}`" if user_dump else "Not Set"
+        
+        # Check login status to display dynamically
         try:
-            await client.send_photo(
-                chat_id=message.chat.id, 
-                photo=START_IMAGE_URL, 
-                caption=welcome_text, 
-                reply_markup=reply_markup, 
-                reply_to_message_id=message.id, 
-                parse_mode=enums.ParseMode.HTML
-            )
+            is_logged_in = await db.get_session(user_id)
         except Exception as e:
-            # Agar kisi wajah se image send na ho (jaise link crash ho), toh safe side normal message chala jaye
-            await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-            print(f"Welcome Image Error: {e}")
-    else:
-        # Agar False hai toh direct text message jayega
-        await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            print(f"Login Session DB Error: {e}")
+            is_logged_in = None
+            
+        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
+        
+        # Login / Logout buttons aur Set/Remove Channel ke buttons
+        settings_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
+                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
+            ],
+            [
+                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
+                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
+        try:
+            await query.message.edit_text(
+                f"⚙️ **Bot Settings Menu**\n\n"
+                f"👤 **Account Status:** {login_status}\n"
+                f"📢 **Current Log Channel:** {current_status}\n\n"
+                f"Aap niche diye gaye buttons ka use karke apna account aur channel settings manage kar sakte hain:",
+                reply_markup=settings_buttons
+            )
+        except Exception as edit_err:
+            print(f"Edit Text Error: {edit_err}")
+
+    # 🔑 Click hone par user ko instruction bhejega ki /login command use kare
+    elif query.data == "btn_login":
+        await query.answer()
+        await query.message.reply_text(
+            "🔑 **Login Karne Ka Tarika:**\n\n"
+            "Settings menu se direct secure authentication karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /login\n\n"
+            "*(Wahan aapse Phone number aur OTP manga jayega string session generate karne ke liye)*"
+        )
+
+    # 🚪 Click hone par user ko instruction bhejega ki /logout command use kare
+    elif query.data == "btn_logout":
+        await query.answer()
+        await query.message.reply_text(
+            "🚪 **Logout Karne Ka Tarika:**\n\n"
+            "Apna login data aur session delete karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /logout"
+        )
+
+    elif query.data == "set_channel":
+        await query.answer()
+        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
+        await query.message.edit_text(
+            "📢 **Channel Set Karne Ke Liye:**\n\n"
+            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
+            "*(Udaharan: -100123456789)*\n\n"
+            "⚠️ **Important:** Bot ko us channel me admin zaroor banayein taaki woh files upload kar sake!"
+        )
+
+    elif query.data == "remove_channel":
+        await query.answer()
+        await set_dump_channel(user_id, None) 
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
+        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**\n\nAb jo bhi files aap download karenge woh kisi channel me nahi jayengi.", reply_markup=back_button)
+
+    elif query.data == "back_home":
+        await query.answer()
+        buttons = [
+            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        
+        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
+        
+        await query.message.edit_text(
+            text=welcome_text, 
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
