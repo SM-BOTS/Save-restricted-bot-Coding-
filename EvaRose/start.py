@@ -276,19 +276,30 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
             
-    # 🖼️ Custom Thumbnail logic handler
+    # 🖼️ Custom Thumbnail logic (Har file type ke liye fetch karega)
     try:
         custom_thumb_id = await db.get_thumbnail(message.from_user.id)
     except:
         custom_thumb_id = None
 
     uploaded_msg = None
+    
+    # Common Thumbnail Downloader Utility for all types
+    async def get_valid_thumb(msg_media_thumbs):
+        if custom_thumb_id:
+            try:
+                return await client.download_media(custom_thumb_id)
+            except:
+                pass
+        if msg_media_thumbs:
+            try:
+                return await acc.download_media(msg_media_thumbs[0].file_id)
+            except:
+                pass
+        return None
+
     if "Document" == msg_type:
-        try:
-            # Agar custom thumbnail hai toh use download karo, nahi toh original thumb use karo
-            ph_path = await client.download_media(custom_thumb_id) if custom_thumb_id else await acc.download_media(msg.document.thumbs[0].file_id)
-        except:
-            ph_path = None
+        ph_path = await get_valid_thumb(msg.document.thumbs if msg.document else None)
         try:
             uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
@@ -298,10 +309,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             os.remove(ph_path)
             
     elif "Video" == msg_type:
-        try:
-            ph_path = await client.download_media(custom_thumb_id) if custom_thumb_id else await acc.download_media(msg.video.thumbs[0].file_id)
-        except:
-            ph_path = None
+        ph_path = await get_valid_thumb(msg.video.thumbs if msg.video else None)
         try:
             uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
@@ -311,28 +319,32 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             os.remove(ph_path)
             
     elif "Animation" == msg_type:
+        # Telegram animations (GIFs) me bhi thumbnail support hota hai agar client support kare
+        ph_path = await get_valid_thumb(msg.animation.thumbs if msg.animation else None)
         try:
-            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_animation(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
+            
     elif "Sticker" == msg_type:
         try:
             uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
+                
     elif "Voice" == msg_type:
         try:
             uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+                
     elif "Audio" == msg_type:
-        try:
-            ph_path = await client.download_media(custom_thumb_id) if custom_thumb_id else await acc.download_media(msg.audio.thumbs[0].file_id)
-        except:
-            ph_path = None
+        ph_path = await get_valid_thumb(msg.audio.thumbs if msg.audio else None)
         try:
             uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
         except Exception as e:
@@ -340,6 +352,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
+            
     elif "Photo" == msg_type:
         try:
             uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
