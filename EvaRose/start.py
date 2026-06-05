@@ -364,6 +364,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
+            
     elif "Video" == msg_type:
         try:
             ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
@@ -376,6 +377,137 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
+            
     elif "Animation" == msg_type:
         try:
-            uploaded_msg = await client.send_animation(chat, file, caption
+            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+                
+    elif "Sticker" == msg_type:
+        try:
+            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
+                
+    elif "Voice" == msg_type:
+        try:
+            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+                
+    elif "Audio" == msg_type:
+        try:
+            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
+            
+    elif "Photo" == msg_type:
+        try:
+            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+
+# ⏱️ Active sent message tracker for auto-deletion
+    if uploaded_msg:
+        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+        asyncio.ensure_future(start_auto_delete(client, chat, uploaded_msg.id, AUTO_DELETE_TIME))
+
+    if uploaded_msg and user_dump:
+        try:
+            await uploaded_msg.copy(chat_id=int(user_dump))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
+    if os.path.exists(f'{message.id}upstatus.txt'):
+        os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(file):
+        os.remove(file)
+    try:
+        await client.delete_messages(message.chat.id, [smsg.id])
+    except:
+        pass
+
+def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
+    try:
+        msg.document.file_id
+        return "Document"
+    except: pass
+    try:
+        msg.video.file_id
+        return "Video"
+    except: pass
+    try:
+        msg.animation.file_id
+        return "Animation"
+    except: pass
+    try:
+        msg.sticker.file_id
+        return "Sticker"
+    except: pass
+    try:
+        msg.voice.file_id
+        return "Voice"
+    except: pass
+    try:
+        msg.audio.file_id
+        return "Audio"
+    except: pass
+    try:
+        msg.photo.file_id
+        return "Photo"
+    except: pass
+    try:
+        msg.text
+        return "Text"
+    except: pass
+
+# 🔘 Updates Callback Query Handler
+@Client.on_callback_query()
+async def callback_handler(client, query: CallbackQuery):
+    user_id = query.from_user.id
+
+    if query.data == "settings":
+        await query.answer()
+        user_dump = await get_dump_channel(user_id)
+        current_status = f"`{user_dump}`" if user_dump else "Not Set"
+        
+        try:
+            is_logged_in = await db.get_session(user_id)
+        except:
+            is_logged_in = None
+            
+        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
+        
+        settings_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
+                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
+            ],
+            [
+                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
+                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
+        await query.message.edit_text(
+            f"⚙️ **Bot Settings Menu**\n\n"
+            f"👤 **User:** {query.from_user.mention}\n"
+            f"🔑 **Status:** {login_status}\n"
+            f"📢 **Log Channel:** {current_status}\n\n"
+            f"Niche diye gaye buttons se setup manage karein:",
+            reply_markup=settings_buttons
+        )
