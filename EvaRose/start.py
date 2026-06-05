@@ -4,7 +4,7 @@
 
 import os
 import asyncio
-impyrogram
+import pyrogram
 import re
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
