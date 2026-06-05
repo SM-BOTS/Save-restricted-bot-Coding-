@@ -17,7 +17,8 @@ class Database:
             dump_channel=None,
             session=None,
             api_id=None,
-            api_hash=None
+            api_hash=None,
+            thumbnail=None  # Default thumbnail state
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -64,8 +65,18 @@ class Database:
     async def set_api_hash(self, id, api_hash):
         await self.col.update_one({'id': int(id)}, {'$set': {'api_hash': api_hash}}, upsert=True)
 
+    # 🖼️ THUMBNAIL FUNCTIONS (ADDED INSIDE CLASS PROPERLY)
+    async def set_thumbnail(self, id, thumbnail):
+        await self.col.update_one({'id': int(id)}, {'$set': {'thumbnail': thumbnail}}, upsert=True)
+
+    async def get_thumbnail(self, id):
+        user = await self.col.find_one({'id': int(id)})
+        return user.get('thumbnail', None) if user else None
+
+
 # Database client instance ka setup
 db = Database(DB_URI, DB_NAME)
+
 
 # ----------------------------------------------------
 # AUTOMATIC DUMP FORWARDER LOGIC BY EVAROSE
@@ -92,10 +103,3 @@ async def auto_forward_to_dump(client, user_id, message_to_copy):
             await message_to_copy.copy(chat_id=int(dump_id))
         except Exception as e:
             print(f"Dump forward error: {e}")
-            
-            async def set_thumbnail(self, id, thumbnail):
-        await self.col.update_one({'id': id}, {'$set': {'thumbnail': thumbnail}})
-
-    async def get_thumbnail(self, id):
-        user = await self.col.find_one({'id': id})
-        return user.get('thumbnail', None) if user else None
