@@ -6,10 +6,12 @@ import os
 import asyncio
 import pyrogram
 import re
+import time
+import requests
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
-from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, START_IMAGE_SHOW, START_IMAGE_URL, AUTO_DELETE_TIME
+from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, START_IMAGE_SHOW, START_IMAGE_URL, AUTO_DELETE_TIME, VERIFY_EXPIRE_HOURS, SHORTENER_URL, SHORTENER_API, BOT_USERNAME
 from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
@@ -19,7 +21,7 @@ class batch_temp(object):
     USER_FILES = {}
     USER_STATES = {}  # User state track karne ke liye dict
 
-# ⏱️ Auto-delete function (Iske upar-niche koi try/except nahi hai, ekdum safe space par hai)
+# ⏱️ Auto-delete background task function
 async def start_auto_delete(client, chat_id, message_id, delay):
     try:
         await asyncio.sleep(delay)
@@ -28,11 +30,42 @@ async def start_auto_delete(client, chat_id, message_id, delay):
     except Exception as e:
         print(f"❌ Auto Delete Failed for {message_id}: {e}")
 
+# 🔗 MULTI-SHORTENER UNIVERSAL LINK GENERATOR
+def get_any_shorturl(user_id):
+    try:
+        # User bypass karne ke baad wapas isi bot par redirect hoga
+        bot_link = f"https://t.me/{BOT_USERNAME}?start=verify_{user_id}"
+        
+        # Website URL aur API ko safai se clean karke jodna
+        clean_url = SHORTENER_URL.replace("https://", "").replace("http://", "").strip("/")
+        final_api_call = f"https://{clean_url}/api?api={SHORTENER_API}&url={bot_link}"
+        
+        response = requests.get(final_api_call)
+        
+        # Alag-alag shortener websites ke JSON response formats ko handle karna
+        try:
+            res_json = response.json()
+            if "shortenedUrl" in res_json:
+                return res_json.get("shortenedUrl")
+            elif "shortened_url" in res_json:
+                return res_json.get("shortened_url")
+            elif "url" in res_json:
+                return res_json.get("url")
+            elif "data" in res_json and "short_url" in res_json["data"]:
+                return res_json["data"]["short_url"]
+        except ValueError:
+            # Agar website JSON ki jagah direct plain text me short link de
+            if response.text.startswith("http"):
+                return response.text.strip()
+                
+    except Exception as e:
+        print(f"Universal Shortener API Error: {e}")
+    return None
+
 # Caption cleaner utility function
 def clean_bad_caption(caption_text):
     if not caption_text:
         return None
-    # Har tarah ke automatic delete wale text ko caption se saaf karne ke liye pattern
     pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?.*?\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
     cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
     bad_strings = [
@@ -80,6 +113,25 @@ def progress(current, total, message, type):
 async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
+    
+    # 🔐 TOKEN VERIFICATION CHECK (Bypass se wapas aane par token catch karna)
+    if len(message.text.split()) > 1:
+        param = message.text.split()[1]
+        if param.startswith("verify_"):
+            verified_user_id = param.split("_")[1]
+            if str(verified_user_id) == str(message.from_user.id):
+                # Database me status update kar dena
+                await db.update_verification(message.from_user.id)
+                await message.reply_text(
+                    f"✅ **Verification Successful!**\n\n"
+                    f"Aapka token successfully activate ho gaya hai. "
+                    f"Ab aap agle **{VERIFY_EXPIRE_HOURS} hours** tak bot ko bina kisi ad ke use kar sakte hain! 🎉"
+                )
+                return
+            else:
+                await message.reply_text("❌ Galat verification link!")
+                return
+
     buttons = [
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
@@ -122,6 +174,29 @@ async def save(client: Client, message: Message):
         except ValueError:
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
+
+    # --- 🔐 TOKEN VERIFICATION WALL START ---
+    if "https://t.me/" in message.text and not message.text.startswith("/"):
+        is_verified = await db.is_user_verified(user_id, VERIFY_EXPIRE_HOURS)
+        
+        if not is_verified:
+            # Custom set shortener se dynamically link nikalna
+            short_url = get_any_shorturl(user_id)
+            
+            if short_url:
+                verify_buttons = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔐 Click Here To Verify", url=short_url)]
+                ])
+                await message.reply_text(
+                    f"⚠️ **Access Denied / Token Expired**\n\n"
+                    f"Bot ko use karne ke liye aapko har **{VERIFY_EXPIRE_HOURS} hours** me ek baar verify karna zaroori hai.\n\n"
+                    f"👉 Niche diye gaye button par click karke verify karein, uske baad bot automatically chalne lagega.",
+                    reply_markup=verify_buttons
+                )
+            else:
+                await message.reply_text("❌ Verification system me kuch takneeki kharabi hai, kripya thodi der baad koshish karein.")
+            return
+    # --- 🔐 VERIFICATION WALL END ---
 
     if ("https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text) and LOGIN_SYSTEM == False:
         if TechVJUser is None:
@@ -205,7 +280,7 @@ async def save(client: Client, message: Message):
                 pass                                
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 🔔 FIXED: Jab saari files ka loop complete ho jaye, tab end me ek hi notification jayega
+        # 🔔 Jab saari batch files/single files upload ho jayein, tab end me ek single notification jayega
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
@@ -234,7 +309,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
         
-    # 📝 Handling Text Messages (Bina caption/cleaning ke skip ya clean direct text)
+    # 📝 Handling Text Messages
     if "Text" == msg_type:
         try:
             text_msg = clean_bad_caption(msg.text)
@@ -270,7 +345,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
     
-    # 👈 FIXED: Yahan par caption ko bilkul empty ("") kar diya hai taaki koi caption na jaye
+    # 📑 Safe Original Caption Recovery
     caption = clean_bad_caption(msg.caption)
     
     if batch_temp.IS_BATCH.get(message.from_user.id):
@@ -283,161 +358,46 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         except:
             ph_path = None
         try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
             uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
-            
     elif "Video" == msg_type:
         try:
             ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
         except:
             ph_path = None
         try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
             uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
-            
     elif "Animation" == msg_type:
         try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
             uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-                
     elif "Sticker" == msg_type:
         try:
             uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
-                
     elif "Voice" == msg_type:
         try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
             uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-                
     elif "Audio" == msg_type:
         try:
             ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
         except:
             ph_path = None
         try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
-            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-            
-    elif "Photo" == msg_type:
-        try:
-            # 🔄 caption="" ko badal kar caption=caption kiya
-            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-    # ⏱️ Media files par auto delete task start karne ka sabse pakka tarika
-    if uploaded_msg:
-        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
-        asyncio.ensure_future(start_auto_delete(client, chat, uploaded_msg.id, AUTO_DELETE_TIME))
-
-    if uploaded_msg and user_dump:
-        try:
-            await uploaded_msg.copy(chat_id=int(user_dump))
-        except Exception as e:
-            print(f"Dump forward error: {e}")
-    if os.path.exists(f'{message.id}upstatus.txt'):
-        os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(file):
-        os.remove(file)
-    try:
-        await client.delete_messages(message.chat.id, [smsg.id])
-    except:
-        pass
-
-def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
-    try:
-        msg.document.file_id
-        return "Document"
-    except: pass
-    try:
-        msg.video.file_id
-        return "Video"
-    except: pass
-    try:
-        msg.animation.file_id
-        return "Animation"
-    except: pass
-    try:
-        msg.sticker.file_id
-        return "Sticker"
-    except: pass
-    try:
-        msg.voice.file_id
-        return "Voice"
-    except: pass
-    try:
-        msg.audio.file_id
-        return "Audio"
-    except: pass
-    try:
-        msg.photo.file_id
-        return "Photo"
-    except: pass
-    try:
-        msg.text
-        return "Text"
-    except: pass
-
-# 🔘 Updates Callback Query Handler
-@Client.on_callback_query()
-async def callback_handler(client, query: CallbackQuery):
-    user_id = query.from_user.id
-
-    if query.data == "settings":
-        await query.answer()
-        user_dump = await get_dump_channel(user_id)
-        current_status = f"`{user_dump}`" if user_dump else "Not Set"
-        
-        try:
-            is_logged_in = await db.get_session(user_id)
-        except:
-            is_logged_in = None
-            
-        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
-        
-        settings_buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
-                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
-            ],
-            [
-                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
-                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
-            ],
-            [
-                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
-            ]
-        ])
-        
-        await query.message.edit_text(
-            f"⚙️ **Bot Settings Menu**\n\n"
-            f"👤 **User:** {query.from_user.mention}\n"
-            f"🔑 **Status:** {login_status}\n"
-            f"📢 **Log Channel:** {current_status}\n\n"
-            f"Niche diye gaye buttons se setup manage karein:",
-            reply_markup=settings_buttons
-        )
+            uploaded_
