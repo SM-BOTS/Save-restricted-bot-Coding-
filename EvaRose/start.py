@@ -358,7 +358,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# SETTINGS ACTIONS CALLBACK INTERACTION REGION
+# SETTINGS SYSTEM WITH 100% FIXED STRING LITERALS
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -424,6 +424,5 @@ async def set_dump_callback(client, callback_query):
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
 async def remove_dump_callback(client, callback_query):
-    try:
-        await set_dump_channel(callback_query.from_user.id, None)
-        await callback_query.message.edit_text("❌ **Dump Channel successf
+    await set_dump_channel(callback_query.from_user.id, None)
+    await callback_query.message.edit_text("❌ **Dump Channel successfully remove ka
