@@ -1,6 +1,8 @@
 import motor.motor_asyncio
+import time  # 👈 Bilkul sahi lagaya hai
 from config import DB_URI, DB_NAME
 from pyrogram.errors import MessageNotModified
+# ... aapke baaki purane imports (jaise motor, pymongo jo bhi ho) ...
 
 class Database:
     
