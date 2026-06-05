@@ -23,7 +23,8 @@ class batch_temp(object):
 def clean_bad_caption(caption_text):
     if not caption_text:
         return None
-    pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+    # Har tarah ke automatic delete wale text ko caption se saaf karne ke liye pattern
+    pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?.*?\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
     cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
     bad_strings = [
         "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
@@ -33,7 +34,6 @@ def clean_bad_caption(caption_text):
         cleaned = cleaned.replace(bad_str, "")
     cleaned = cleaned.strip()
     return cleaned if cleaned else None
-
 async def downstatus(client, statusfile, message, chat):
     while True:
         if os.path.exists(statusfile):
