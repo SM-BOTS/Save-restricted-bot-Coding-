@@ -36,6 +36,16 @@ AUTO_DELETE_TIME = 10
 # if you don't want to upload in channel then leave it blank don't fill anything.
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003703565044")
 
+# --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
+VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "APNE_BOT_KA_USERNAME_WITHOUT_@")
+
+# 🌐 Website ka domain (Example: vplink.co, gplinks.in)
+SHORTENER_URL = os.environ.get("SHORTENER_URL", "vplink.co")
+
+# 🔑 Shortener website se mili hui aapki Secret API Key
+SHORTENER_API = os.environ.get("SHORTENER_API", "APNI_API_KEY_YAHAN_DALEIN")
+
 # Your Mongodb Database Url
 # Warning - Give Db uri in deploy server environment variable, don't give in repo.
 DB_URI = os.environ.get("DB_URI", "mongodb+srv://gxmon239:f4l7bKrhka3Fh2cV@cluster0.qmblwql.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # Warning - Give Db uri in deploy server environment variable, don't give in repo.
