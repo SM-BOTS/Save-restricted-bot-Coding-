@@ -27,7 +27,7 @@ ADMINS = int(os.environ.get("ADMINS", "8391386178"))
 FORCE_CLEAN_CAPTION = True
 # --- Welcome Image Settings ---
 START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh False kar do
-START_IMAGE_URL = "https://graph.org/file/your_image_link_here.jpg"  # Apni image ka direct link
+START_IMAGE_URL = "https://i.ibb.co/HLhnypGg/photo-2026-05-27-17-49-35-7644630238818730000.jpg"  # Apni image ka direct link
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
