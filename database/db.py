@@ -17,8 +17,7 @@ class Database:
             dump_channel=None,
             session=None,
             api_id=None,
-            api_hash=None,
-            thumbnail=None  # Default thumbnail state
+            api_hash=None
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -64,14 +63,6 @@ class Database:
 
     async def set_api_hash(self, id, api_hash):
         await self.col.update_one({'id': int(id)}, {'$set': {'api_hash': api_hash}}, upsert=True)
-
-    # 🖼️ THUMBNAIL FUNCTIONS (ADDED INSIDE CLASS PROPERLY)
-    async def set_thumbnail(self, id, thumbnail):
-        await self.col.update_one({'id': int(id)}, {'$set': {'thumbnail': thumbnail}}, upsert=True)
-
-    async def get_thumbnail(self, id):
-        user = await self.col.find_one({'id': int(id)})
-        return user.get('thumbnail', None) if user else None
 
 
 # Database client instance ka setup
