@@ -25,6 +25,11 @@ API_HASH = os.environ.get("API_HASH", "7cd3bda26b08957a7205bbe8a51e6e90")
 # Your Owner / Admin Id For Broadcast 
 ADMINS = int(os.environ.get("ADMINS", "8391386178"))
 FORCE_CLEAN_CAPTION = True
+# --- Welcome Media Settings ---
+START_MEDIA_TYPE = "image"  # Yahan likho "image" ya "video" ya "none" (agar kuch nahi chahiye)
+
+START_IMAGE_URL = "https://graph.org/file/your_image_link_here.jpg"  # Apni image ka telegraph/graph.org link
+START_VIDEO_URL = "https://graph.org/file/your_video_link_here.mp4"  # Apni video ka direct mp4 link
 
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
