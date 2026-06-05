@@ -2,8 +2,7 @@
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
 # Ask Doubt on telegram @KingVJ01
 
-import os
-import asyncio
+import o asyncio
 import pyrogram
 import re
 from pyrogram import Client, filters, enums
