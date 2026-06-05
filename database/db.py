@@ -92,9 +92,8 @@ async def auto_forward_to_dump(client, user_id, message_to_copy):
             await message_to_copy.copy(chat_id=int(dump_id))
         except Exception as e:
             print(f"Dump forward error: {e}")
-
-
-async def set_thumbnail(self, id, thumbnail):
+            
+            async def set_thumbnail(self, id, thumbnail):
         await self.col.update_one({'id': id}, {'$set': {'thumbnail': thumbnail}})
 
     async def get_thumbnail(self, id):
