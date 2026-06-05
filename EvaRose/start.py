@@ -342,9 +342,15 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-async def auto_delete_batch(client, chat_id, message_ids, delay=300):
-    await asyncio.sleep(delay)
-    try:
-        await client.delete_messages(chat_id, message_ids)
-    except Exception as e:
-        print(f"Batch Auto-delete error: {e}")
+from pyrogram.types import CallbackQuery
+
+@Client.on_callback_query()
+async def callback_handler(client, query: CallbackQuery):
+
+    if query.data == "settings":
+        await query.message.edit_text(
+            "**⚙️ Settings Menu**\n\n"
+            "Settings button working successfully."
+        )
+
+    await query.answer()
