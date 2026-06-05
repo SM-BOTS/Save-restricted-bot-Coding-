@@ -28,7 +28,7 @@ FORCE_CLEAN_CAPTION = True
 # --- Welcome Media Settings ---
 START_MEDIA_TYPE = "image"  # Yahan likho "image" ya "video" ya "none" (agar kuch nahi chahiye)
 
-START_IMAGE_URL = "https://graph.org/file/your_image_link_here.jpg"  # Apni image ka telegraph/graph.org link
+START_IMAGE_URL = "https://i.ibb.co/gYFD469/photo-2026-05-28-08-13-57-7644852993002569744.jpg"  # Apni image ka telegraph/graph.org link
 START_VIDEO_URL = "https://graph.org/file/your_video_link_here.mp4"  # Apni video ka direct mp4 link
 
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
