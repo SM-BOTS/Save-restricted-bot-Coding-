@@ -30,7 +30,7 @@ START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh F
 START_IMAGE_URL = "https://i.ibb.co/HLhnypGg/photo-2026-05-27-17-49-35-7644630238818730000.jpg"  # Apni image ka direct link
 # --- Auto Delete Settings ---
 # Time seconds me hona chahiye (Udaharan: 300 seconds = 5 minutes)
-AUTO_DELETE_TIME = 10
+AUTO_DELETE_TIME = 300
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
@@ -38,13 +38,13 @@ CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003703565044")
 
 # --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
 VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
-BOT_USERNAME = os.environ.get("BOT_USERNAME", "APNE_BOT_KA_USERNAME_WITHOUT_@")
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "Ggefsddwdebot")
 
 # 🌐 Website ka domain (Example: vplink.co, gplinks.in)
-SHORTENER_URL = os.environ.get("SHORTENER_URL", "vplink.co")
+SHORTENER_URL = os.environ.get("SHORTENER_URL", "vplink.in")
 
 # 🔑 Shortener website se mili hui aapki Secret API Key
-SHORTENER_API = os.environ.get("SHORTENER_API", "APNI_API_KEY_YAHAN_DALEIN")
+SHORTENER_API = os.environ.get("SHORTENER_API", "643cf7208bfdc009d2e1f953905840a9619d48ca")
 
 # Your Mongodb Database Url
 # Warning - Give Db uri in deploy server environment variable, don't give in repo.
