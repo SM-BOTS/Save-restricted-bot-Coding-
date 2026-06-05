@@ -30,7 +30,7 @@ START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh F
 START_IMAGE_URL = "https://i.ibb.co/HLhnypGg/photo-2026-05-27-17-49-35-7644630238818730000.jpg"  # Apni image ka direct link
 # --- Auto Delete Settings ---
 # Time seconds me hona chahiye (Udaharan: 300 seconds = 5 minutes)
-AUTO_DELETE_TIME = 300
+AUTO_DELETE_TIME = 10
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
