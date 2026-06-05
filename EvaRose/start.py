@@ -209,11 +209,15 @@ async def save(client: Client, message: Message):
                     text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **{delete_minutes} minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe kisi safe jagah forward kar lein."
                 )
                 
-                # Agar aap chahte hain ki ye notification message bhi files ke sath hi delete ho jaye, toh niche wali line rehne dena:
-                asyncio.create_task(auto_delete_msg(client, message.chat.id, notif_msg.id, AUTO_DELETE_TIME))
-                
-            except Exception as e:
-                print(f"Notification error: {e}")
+                # Yeh naya aur behtareen auto-delete function hai jo bina ruke delete karega
+async def start_auto_delete(client, chat_id, message_id, delay):
+    try:
+        await asyncio.sleep(delay)
+        await client.delete_messages(chat_id, message_id)
+        print(f"🗑️ Automatically Deleted Message ID: {message_id}")
+    except Exception as e:
+        print(f"❌ Auto Delete Failed for {message_id}: {e}")
+
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty:
@@ -227,12 +231,16 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
 
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
+        
+    # 📝 Handling Text Messages
     if "Text" == msg_type:
         try:
             text_msg = clean_bad_caption(msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
+                # 🔥 Yahan se auto-delete guarantee ke sath trigger hoga text ke liye
+                asyncio.ensure_future(start_auto_delete(client, chat, sent_msg.id, AUTO_DELETE_TIME))
             if user_dump and sent_msg:
                 try:
                     await sent_msg.copy(int(user_dump))
@@ -326,8 +334,11 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
+    # ⏱️ Media files par auto delete task start karne ka sabse pakka tarika
     if uploaded_msg:
         batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+        asyncio.ensure_future(start_auto_delete(client, chat, uploaded_msg.id, AUTO_DELETE_TIME))
+
     if uploaded_msg and user_dump:
         try:
             await uploaded_msg.copy(chat_id=int(user_dump))
@@ -341,40 +352,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         await client.delete_messages(message.chat.id, [smsg.id])
     except:
         pass
-
-def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
-    try:
-        msg.document.file_id
-        return "Document"
-    except: pass
-    try:
-        msg.video.file_id
-        return "Video"
-    except: pass
-    try:
-        msg.animation.file_id
-        return "Animation"
-    except: pass
-    try:
-        msg.sticker.file_id
-        return "Sticker"
-    except: pass
-    try:
-        msg.voice.file_id
-        return "Voice"
-    except: pass
-    try:
-        msg.audio.file_id
-        return "Audio"
-    except: pass
-    try:
-        msg.photo.file_id
-        return "Photo"
-    except: pass
-    try:
-        msg.text
-        return "Text"
-    except: pass
 
 # 🔘 Updates Callback Query Handler
 @Client.on_callback_query()
