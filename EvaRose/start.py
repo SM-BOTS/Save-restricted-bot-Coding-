@@ -70,9 +70,11 @@ async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
     buttons = [
-        [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-        [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀ體 ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
-    ]
+    [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+    [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+    [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+     InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+	]
     reply_markup = InlineKeyboardMarkup(buttons)
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
 
