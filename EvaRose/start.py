@@ -417,5 +417,91 @@ async def callback_handler(client, query: CallbackQuery):
         login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
         thumb_status = "🖼️ Set" if has_thumb else "❌ Not Set"
         
-        # Grid format buttons
-        settings_buttons = InlineKeyboardMa
+        # Yahan par naam poora 'InlineKeyboardMarkup' hona chahiye
+        settings_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
+                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
+            ],
+            [
+                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
+                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("🖼️ Set Thumbnail", callback_data="set_thumb"),
+                InlineKeyboardButton("🗑️ Remove Thumbnail", callback_data="remove_thumb")
+            ],
+            [
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
+        await query.message.edit_text(
+            f"⚙️ **Bot Settings Menu**\n\n"
+            f"👤 **Account Status:** {login_status}\n"
+            f"📢 **Current Log Channel:** {current_status}\n"
+            f"🎨 **Custom Thumbnail:** {thumb_status}\n\n"
+            f"Aap niche diye gaye buttons ka use karke apni settings manage kar sakte hain:",
+            reply_markup=settings_buttons
+        )
+
+    elif query.data == "btn_login":
+        await query.answer()
+        await query.message.reply_text(
+            "🔑 **Login Karne Ka Tarika:**\n\n"
+            "Settings menu se direct secure authentication karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /login"
+        )
+
+    elif query.data == "btn_logout":
+        await query.answer()
+        await query.message.reply_text(
+            "🚪 **Logout Karne Ka Tarika:**\n\n"
+            "Apna login data aur session delete karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /logout"
+        )
+
+    elif query.data == "set_channel":
+        await query.answer()
+        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
+        await query.message.edit_text(
+            "📢 **Channel Set Karne Ke Liye:**\n\n"
+            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
+            "*(Udaharan: -100123456789)*"
+        )
+
+    elif query.data == "remove_channel":
+        await query.answer()
+        await set_dump_channel(user_id, None) 
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
+        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**", reply_markup=back_button)
+
+    elif query.data == "set_thumb":
+        await query.answer()
+        batch_temp.USER_STATES[user_id] = "awaiting_thumbnail"
+        await query.message.edit_text(
+            "🖼️ **Custom Thumbnail Set Karein:**\n\n"
+            "Aap jis photo ko video/files par lagana chahte hain, woh **Photo mujhe abhi bhejien**.\n\n"
+            "*(Bot us photo ko save karke aapki har file ke aage implement kar dega)*"
+        )
+
+    elif query.data == "remove_thumb":
+        await query.answer()
+        try:
+            await db.set_thumbnail(user_id, None)
+        except:
+            pass
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
+        await query.message.edit_text("🗑️ **Custom Thumbnail successfully hata diya gaya hai!**\n\nAb files apne original thumbnails ke sath hi send hongi.", reply_markup=back_button)
+
+    elif query.data == "back_home":
+        await query.answer()
+        buttons = [
+            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
+        await query.message.edit_text(text=welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
