@@ -19,28 +19,19 @@ class batch_temp(object):
     USER_FILES = {}
     USER_STATES = {}  # User state track karne ke liye naya dict
 
-# Caption cleaner aur custom caption applicator utility function
-async def process_caption(user_id, original_caption):
-    cleaned = original_caption
-    if cleaned:
-        pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
-        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
-        bad_strings = [
-            "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
-            "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
-        ]
-        for bad_str in bad_strings:
-            cleaned = cleaned.replace(bad_str, "")
-        cleaned = cleaned.strip()
-    
-    try:
-        custom_caption = await db.get_caption(user_id)
-    except AttributeError:
-        custom_caption = None
-
-    if custom_caption:
-        return custom_caption
-    
+# Caption cleaner utility function (Caption feature hata diya hai, sirf clean karega agar original me ho)
+def clean_bad_caption(caption_text):
+    if not caption_text:
+        return None
+    pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+    cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
+    bad_strings = [
+        "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
+        "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
+    ]
+    for bad_str in bad_strings:
+        cleaned = cleaned.replace(bad_str, "")
+    cleaned = cleaned.strip()
     return cleaned if cleaned else None
 
 async def downstatus(client, statusfile, message, chat):
@@ -83,7 +74,7 @@ async def send_start(client: Client, message: Message):
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
         [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-         InlineKeyboardButton("🤖 uiᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
@@ -101,6 +92,7 @@ async def send_cancel(client: Client, message: Message):
 async def save(client: Client, message: Message):
     user_id = message.from_user.id
     
+    # ⚙️ Handling Channel ID input when user clicks "Set Channel"
     if batch_temp.USER_STATES.get(user_id) == "awaiting_channel_id":
         try:
             channel_id = int(message.text)
@@ -111,17 +103,6 @@ async def save(client: Client, message: Message):
             await message.reply_text(f"✅ **Success!** Aapka log channel successfully set ho gaya hai:\n`{channel_id}`\n\n⚠️ **Zaroori:** Bot ko is channel me **Admin** banana mat bhooliyega.", reply_markup=back_button)
         except ValueError:
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
-        return
-
-    if batch_temp.USER_STATES.get(user_id) == "awaiting_caption":
-        custom_cap = message.text
-        try:
-            await db.set_caption(user_id, custom_cap)
-        except AttributeError:
-            pass
-        batch_temp.USER_STATES[user_id] = None
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        await message.reply_text(f"✅ **Custom Caption Set Ho Gaya!**\n\nAb aapki sabhi files me ye caption lag kar aayega:\n\n{custom_cap}", reply_markup=back_button)
         return
 
     if ("https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text) and LOGIN_SYSTEM == False:
@@ -228,7 +209,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         return 
     if "Text" == msg_type:
         try:
-            text_msg = await process_caption(message.from_user.id, msg.text)
+            text_msg = clean_bad_caption(msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
@@ -256,4 +237,191 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             os.remove(f'{message.id}downstatus.txt')
         return await smsg.delete()
         
-    if batch_temp.IS_
+    if batch_temp.IS_BATCH.get(message.from_user.id):
+        return 
+    asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
+    caption = clean_bad_caption(msg.caption)
+    if batch_temp.IS_BATCH.get(message.from_user.id):
+        return 
+            
+    uploaded_msg = None
+    if "Document" == msg_type:
+        try:
+            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
+    elif "Video" == msg_type:
+        try:
+            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
+    elif "Animation" == msg_type:
+        try:
+            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+    elif "Sticker" == msg_type:
+        try:
+            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
+    elif "Voice" == msg_type:
+        try:
+            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+    elif "Audio" == msg_type:
+        try:
+            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
+        except:
+            ph_path = None
+        try:
+            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ph_path != None:
+            os.remove(ph_path)
+    elif "Photo" == msg_type:
+        try:
+            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+    
+    if uploaded_msg:
+        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
+    if uploaded_msg and user_dump:
+        try:
+            await uploaded_msg.copy(chat_id=int(user_dump))
+        except Exception as e:
+            print(f"Dump forward error: {e}")
+    if os.path.exists(f'{message.id}upstatus.txt'):
+        os.remove(f'{message.id}upstatus.txt')
+    if os.path.exists(file):
+        os.remove(file)
+    try:
+        await client.delete_messages(message.chat.id, [smsg.id])
+    except:
+        pass
+
+def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
+    try:
+        msg.document.file_id
+        return "Document"
+    except: pass
+    try:
+        msg.video.file_id
+        return "Video"
+    except: pass
+    try:
+        msg.animation.file_id
+        return "Animation"
+    except: pass
+    try:
+        msg.sticker.file_id
+        return "Sticker"
+    except: pass
+    try:
+        msg.voice.file_id
+        return "Voice"
+    except: pass
+    try:
+        msg.audio.file_id
+        return "Audio"
+    except: pass
+    try:
+        msg.photo.file_id
+        return "Photo"
+    except: pass
+    try:
+        msg.text
+        return "Text"
+    except: pass
+
+# 🔘 Updates Callback Query Handler
+@Client.on_callback_query()
+async def callback_handler(client, query: CallbackQuery):
+    user_id = query.from_user.id
+
+    if query.data == "settings":
+        user_dump = await get_dump_channel(user_id)
+        current_status = f"`{user_dump}`" if user_dump else "Not Set"
+        
+        # Check login status to display dynamically
+        try:
+            is_logged_in = await db.get_session(user_id)
+        except:
+            is_logged_in = None
+        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
+        
+        # 🆕 Login / Logout buttons ko Set/Remove Channel ke upar rakh diya hai
+        settings_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
+                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
+            ],
+            [
+                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
+                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
+        await query.message.edit_text(
+            f"⚙️ **Bot Settings Menu**\n\n"
+            f"👤 **Account Status:** {login_status}\n"
+            f"📢 **Current Log Channel:** {current_status}\n\n"
+            f"Aap niche diye gaye buttons ka use karke apna account aur channel settings manage kar sakte hain:",
+            reply_markup=settings_buttons
+        )
+
+    # 🔑 Click hone par user ko instruction bhejega ki /login command use kare
+    elif query.data == "btn_login":
+        await query.answer("Bot me login karne ke liye...", show_alert=False)
+        await query.message.reply_text(
+            "🔑 **Login Karne Ka Tarika:**\n\n"
+            "Settings menu se direct secure authentication karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /login\n\n"
+            "*(Wahan aapse Phone number aur OTP manga jayega string session generate karne ke liye)*"
+        )
+
+    # 🚪 Click hone par user ko instruction bhejega ki /logout command use kare
+    elif query.data == "btn_logout":
+        await query.answer("Bot se logout karne ke liye...", show_alert=False)
+        await query.message.reply_text(
+            "🚪 **Logout Karne Ka Tarika:**\n\n"
+            "Apna login data aur session delete karne ke liye niche diye gaye command par click karein:\n"
+            "➡️ /logout"
+        )
+
+    elif query.data == "set_channel":
+        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
+        await query.message.edit_text(
+            "📢 **Channel Set Karne Ke Liye:**\n\n"
+            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
+            "*(Udaharan: -100123456789)*\n\n"
+            "⚠️ **Important:** Bot ko us channel me admin zaroor banayein taaki woh files upload kar sake!"
+        )
+
+    elif query.data == "remove_channel":
+        
