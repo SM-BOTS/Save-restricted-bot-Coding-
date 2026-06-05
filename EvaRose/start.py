@@ -10,6 +10,7 @@ from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME
+# DB se caption wale functions bhi import kar rahe hain (agar db.py me alag se hain, nahi toh direct db object use hoga)
 from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
@@ -19,19 +20,35 @@ class batch_temp(object):
     USER_FILES = {}
     USER_STATES = {}  # User state track karne ke liye naya dict
 
-# Caption cleaner utility function
-def clean_bad_caption(caption_text):
-    if not caption_text:
-        return None
-    pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
-    cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
-    bad_strings = [
-        "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
-        "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
-    ]
-    for bad_str in bad_strings:
-        cleaned = cleaned.replace(bad_str, "")
-    cleaned = cleaned.strip()
+# Caption cleaner aur custom caption applicator utility function
+async def process_caption(user_id, original_caption):
+    # Pehle agar koi ganda copyright wala caption hai toh use saaf karo
+    cleaned = original_caption
+    if cleaned:
+        pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
+        bad_strings = [
+            "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
+            "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
+        ]
+        for bad_str in bad_strings:
+            cleaned = cleaned.replace(bad_str, "")
+        cleaned = cleaned.strip()
+    
+    # Ab check karo ki user ne koi custom caption set kiya hai ya nahi
+    # Agar aapki db class me direct method hai toh 'await db.get_caption(user_id)' use karein
+    try:
+        custom_caption = await db.get_caption(user_id)
+    except AttributeError:
+        # Agar db class ke andar function nahi hai toh fallback broad method laga sakte hain
+        custom_caption = None
+
+    if custom_caption:
+        # Agar user ne custom caption set kiya hai toh wahi dikhega
+        # Agar aap chahte ho ki purana caption bhi rahe aur naya bhi jude, toh aap niche wala use kar sakte hain:
+        # return f"{cleaned}\n\n{custom_caption}" if cleaned else custom_caption
+        return custom_caption
+    
     return cleaned if cleaned else None
 
 async def downstatus(client, statusfile, message, chat):
@@ -74,7 +91,7 @@ async def send_start(client: Client, message: Message):
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
         [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+         InlineKeyboardButton("🤖 uiᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
@@ -96,13 +113,25 @@ async def save(client: Client, message: Message):
     if batch_temp.USER_STATES.get(user_id) == "awaiting_channel_id":
         try:
             channel_id = int(message.text)
-            await set_dump_channel(user_id, channel_id) # Database me save ho rha hai
-            batch_temp.USER_STATES[user_id] = None # Reset state
+            await set_dump_channel(user_id, channel_id) 
+            batch_temp.USER_STATES[user_id] = None 
             
             back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
             await message.reply_text(f"✅ **Success!** Aapka log channel successfully set ho gaya hai:\n`{channel_id}`\n\n⚠️ **Zaroori:** Bot ko is channel me **Admin** banana mat bhooliyega.", reply_markup=back_button)
         except ValueError:
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
+        return
+
+    # ⚙️ Handling Custom Caption input when user clicks "Set Caption"
+    if batch_temp.USER_STATES.get(user_id) == "awaiting_caption":
+        custom_cap = message.text
+        try:
+            await db.set_caption(user_id, custom_cap)
+        except AttributeError:
+            pass
+        batch_temp.USER_STATES[user_id] = None
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+        await message.reply_text(f"✅ **Custom Caption Set Ho Gaya!**\n\nAb aapki sabhi files me ye caption lag kar aayega:\n\n{custom_cap}", reply_markup=back_button)
         return
 
     if ("https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text) and LOGIN_SYSTEM == False:
@@ -191,7 +220,6 @@ async def save(client: Client, message: Message):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
                 notif_msg = await client.send_message(chat_id=message.chat.id, text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe forward kar lein.")
-                # Base file handling logic updates via external automatic deletion if defined elsewhere
             except Exception as e:
                 print(f"Notification error: {e}")
 
@@ -210,7 +238,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         return 
     if "Text" == msg_type:
         try:
-            text_msg = clean_bad_caption(msg.text)
+            # Text messages ke liye caption cleaner + custom caption process lagaya
+            text_msg = await process_caption(message.from_user.id, msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
@@ -241,7 +270,10 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
-    caption = clean_bad_caption(msg.caption)
+    
+    # Sabhi files ke liye process_caption use kar rahe hain jo naya caption manage karega
+    caption = await process_caption(message.from_user.id, msg.caption)
+    
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
             
@@ -366,10 +398,21 @@ async def callback_handler(client, query: CallbackQuery):
         user_dump = await get_dump_channel(user_id)
         current_status = f"`{user_dump}`" if user_dump else "Not Set"
         
+        try:
+            user_cap = await db.get_caption(user_id)
+        except AttributeError:
+            user_cap = None
+        current_caption = f"\n\n📝 **Current Caption:**\n`{user_cap}`" if user_cap else "\n\n📝 **Current Caption:** Not Set"
+        
+        # Naye buttons add kiye: Set Caption aur Remove Caption ke liye
         settings_buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
                 InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("📝 Set Caption", callback_data="set_caption"),
+                InlineKeyboardButton("🗑️ Remove Caption", callback_data="remove_caption")
             ],
             [
                 InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
@@ -377,38 +420,4 @@ async def callback_handler(client, query: CallbackQuery):
         ])
         
         await query.message.edit_text(
-            f"⚙️ **Bot Settings Menu**\n\n"
-            f"📢 **Current Log Channel:** {current_status}\n\n"
-            f"Aap niche diye gaye buttons ka use karke apna personal dumping/log channel manage kar sakte hain:",
-            reply_markup=settings_buttons
-        )
-
-    elif query.data == "set_channel":
-        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
-        await query.message.edit_text(
-            "📢 **Channel Set Karne Ke Liye:**\n\n"
-            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
-            "*(Udaharan: -100123456789)*\n\n"
-            "⚠️ **Important:** Bot ko us channel me admin zaroor banayein taaki woh files upload kar sake!"
-        )
-
-    elif query.data == "remove_channel":
-        await set_dump_channel(user_id, None) # DB se hata diya
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
-        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**\n\nAb jo bhi files aap download karenge woh kisi channel me nahi jayengi.", reply_markup=back_button)
-
-    elif query.data == "back_home":
-        buttons = [
-            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
-            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await query.message.edit_text(
-            f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", 
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
-
-    await query.answer()
+           
