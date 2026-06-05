@@ -17,29 +17,20 @@ from bot import TechVJUser
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
-    CUSTOM_CAPTIONS = {}
 
 # Caption cleaner utility function
-async def clean_bad_caption(user_id, caption_text):
-    if caption_text:
-        pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
-        cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
-        bad_strings = [
-            "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
-            "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
-        ]
-        for bad_str in bad_strings:
-            cleaned = cleaned.replace(bad_str, "")
-        cleaned = cleaned.strip()
-    else:
-        cleaned = ""
-
-    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    if custom_cap:
-        if cleaned:
-            return f"{cleaned}\n\n{custom_cap}"
-        else:
-            return custom_cap
+def clean_bad_caption(caption_text):
+    if not caption_text:
+        return None
+    pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
+    cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
+    bad_strings = [
+        "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
+        "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
+    ]
+    for bad_str in bad_strings:
+        cleaned = cleaned.replace(bad_str, "")
+    cleaned = cleaned.strip()
     return cleaned if cleaned else None
 
 async def downstatus(client, statusfile, message, chat):
@@ -80,8 +71,7 @@ async def send_start(client: Client, message: Message):
         await db.add_user(message.from_user.id, message.from_user.first_name)
     buttons = [
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-        [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀ體 ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")],
-        [InlineKeyboardButton("⚙️ Bot Settings", callback_data="settings_cmd")]
+        [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀ體 ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
@@ -203,7 +193,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         return 
     if "Text" == msg_type:
         try:
-            text_msg = await clean_bad_caption(message.from_user.id, msg.text)
+            text_msg = clean_bad_caption(msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
@@ -234,7 +224,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
-    caption = await clean_bad_caption(message.from_user.id, msg.caption)
+    caption = clean_bad_caption(msg.caption)
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
             
@@ -356,77 +346,3 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         await client.delete_messages(chat_id, message_ids)
     except Exception as e:
         print(f"Batch Auto-delete error: {e}")
-
-# ----------------------------------------------------
-# SETTINGS BACKEND - 100% BULLETPROOF SHORT STRINGS
-# ----------------------------------------------------
-
-@Client.on_message(filters.command("settings") & filters.private)
-async def settings_cmd(client, message):
-    user_id = message.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    
-    text = "Bot Settings Menu\n\n"
-    if dump_id:
-        text += f"Dump Channel ID: {dump_id}\n"
-    else:
-        text += "Dump Channel: Not Set\n"
-    if custom_cap:
-        text += f"Custom Caption: {custom_cap}"
-    else:
-        text += "Custom Caption: Not Set"
-        
-    buttons = [
-        [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
-        [InlineKeyboardButton("✍️ SET CAPTION", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ REMOVE CAPTION", callback_data="rem_caption")]
-    ]
-    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-
-@Client.on_callback_query(filters.regex("^settings_cmd$"))
-async def settings_callback(client, callback_query):
-    user_id = callback_query.from_user.id
-    dump_id = await get_dump_channel(user_id)
-    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    
-    text = "Bot Settings Menu\n\n"
-    if dump_id:
-        text += f"Dump Channel ID: {dump_id}\n"
-    else:
-        text += "Dump Channel: Not Set\n"
-    if custom_cap:
-        text += f"Custom Caption: {custom_cap}"
-    else:
-        text += "Custom Caption: Not Set"
-        
-    buttons = [
-        [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
-        [InlineKeyboardButton("✍️ SET CAPTION", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ REMOVE CAPTION", callback_data="rem_caption")]
-    ]
-    try:
-        await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    except MessageNotModified:
-        await callback_query.answer("Already in settings menu!")
-
-@Client.on_callback_query(filters.regex("^set_dump_info$"))
-async def set_dump_callback(client, callback_query):
-    await callback_query.message.delete()
-    await client.send_message(chat_id=callback_query.from_user.id, text="Send your channel ID:")
-    try:
-        response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
-        if response and response.text:
-            channel_id = int(response.text.strip())
-            await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text("Channel saved successfully.")
-    except Exception as e:
-        await client.send_message(callback_query.from_user.id, f"Error: {e}")
-
-@Client.on_callback_query(filters.regex("^rem_dump$"))
-async def remove_dump_callback(client, callback_query):
-    await set_dump_channel(callback_query.from_user.id, None)
-    await callback_query.message.edit_text("Channel removed.")
-
-@Client.on_callback_query(filters.regex("^set_caption_info$"))
-async def set_caption_callback(client, callback_query):
-    await callback_query.message.delete()
-    await client.send_message(chat_id=callback_query.from_user.id, 
