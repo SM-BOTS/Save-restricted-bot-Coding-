@@ -97,44 +97,20 @@ async def send_cancel(client: Client, message: Message):
     batch_temp.IS_BATCH[message.from_user.id] = True
     await client.send_message(chat_id=message.chat.id, text="**Batch Successfully Cancelled.**")
 
-# 📸 Photo/Text handling logic update
-@Client.on_message((filters.text | filters.photo) & filters.private)
+@Client.on_message(filters.text & filters.private)
 async def save(client: Client, message: Message):
     user_id = message.from_user.id
     
-    # ⚙️ Custom Thumbnail save karne ka logic
-    if batch_temp.USER_STATES.get(user_id) == "awaiting_thumbnail":
-        if not message.photo:
-            await message.reply_text("❌ **Kripya ek Photo bhejiye!** Thumbnail ke liye sirf images hi valid hain.")
-            return
-        
-        # Photo ki file id nikal kar database me save karenge
-        thumb_id = message.photo.file_id
-        try:
-            await db.set_thumbnail(user_id, thumb_id)
-        except AttributeError:
-            pass # Agar db file me function na ho toh handle ke liye
-            
-        batch_temp.USER_STATES[user_id] = None # Reset state
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        await message.reply_text("✅ **Custom Thumbnail successfully save ho gaya!**\n\nAb jo bhi videos ya documents aap save karenge, unpar ye thumbnail lag kar aayega.", reply_markup=back_button)
-        return
-
     # ⚙️ Handling Channel ID input when user clicks "Set Channel"
     if batch_temp.USER_STATES.get(user_id) == "awaiting_channel_id":
-        if message.text:
-            try:
-                channel_id = int(message.text)
-                await set_dump_channel(user_id, channel_id) 
-                batch_temp.USER_STATES[user_id] = None 
-                back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-                await message.reply_text(f"✅ **Success!** Aapka log channel successfully set ho gaya hai:\n`{channel_id}`\n\n⚠️ **Zaroori:** Bot ko is channel me **Admin** banana mat bhooliyega.", reply_markup=back_button)
-            except ValueError:
-                await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
-        return
-
-    # Agar text nahi hai (jaise user ne direct bina kisi state ke random photo bhej di) toh function ko aage na badhayein
-    if not message.text:
+        try:
+            channel_id = int(message.text)
+            await set_dump_channel(user_id, channel_id) 
+            batch_temp.USER_STATES[user_id] = None 
+            back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+            await message.reply_text(f"✅ **Success!** Aapka log channel successfully set ho gaya hai:\n`{channel_id}`\n\n⚠️ **Zaroori:** Bot ko is channel me **Admin** banana mat bhooliyega.", reply_markup=back_button)
+        except ValueError:
+            await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
 
     if ("https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text) and LOGIN_SYSTEM == False:
@@ -276,30 +252,12 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id):
         return 
             
-    # 🖼️ Custom Thumbnail logic (Har file type ke liye fetch karega)
-    try:
-        custom_thumb_id = await db.get_thumbnail(message.from_user.id)
-    except:
-        custom_thumb_id = None
-
     uploaded_msg = None
-    
-    # Common Thumbnail Downloader Utility for all types
-    async def get_valid_thumb(msg_media_thumbs):
-        if custom_thumb_id:
-            try:
-                return await client.download_media(custom_thumb_id)
-            except:
-                pass
-        if msg_media_thumbs:
-            try:
-                return await acc.download_media(msg_media_thumbs[0].file_id)
-            except:
-                pass
-        return None
-
     if "Document" == msg_type:
-        ph_path = await get_valid_thumb(msg.document.thumbs if msg.document else None)
+        try:
+            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
+        except:
+            ph_path = None
         try:
             uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
@@ -307,9 +265,11 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
-            
     elif "Video" == msg_type:
-        ph_path = await get_valid_thumb(msg.video.thumbs if msg.video else None)
+        try:
+            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
+        except:
+            ph_path = None
         try:
             uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
@@ -317,34 +277,29 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
-            
     elif "Animation" == msg_type:
-        # Telegram animations (GIFs) me bhi thumbnail support hota hai agar client support kare
-        ph_path = await get_valid_thumb(msg.animation.thumbs if msg.animation else None)
         try:
-            uploaded_msg = await client.send_animation(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-            
     elif "Sticker" == msg_type:
         try:
             uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
-                
     elif "Voice" == msg_type:
         try:
             uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-                
     elif "Audio" == msg_type:
-        ph_path = await get_valid_thumb(msg.audio.thumbs if msg.audio else None)
+        try:
+            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
+        except:
+            ph_path = None
         try:
             uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
         except Exception as e:
@@ -352,7 +307,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         if ph_path != None:
             os.remove(ph_path)
-            
     elif "Photo" == msg_type:
         try:
             uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
@@ -422,15 +376,12 @@ async def callback_handler(client, query: CallbackQuery):
         
         try:
             is_logged_in = await db.get_session(user_id)
-            has_thumb = await db.get_thumbnail(user_id)
         except:
             is_logged_in = None
-            has_thumb = None
             
         login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
-        thumb_status = "🖼️ Set" if has_thumb else "❌ Not Set"
         
-        # Yahan par naam poora 'InlineKeyboardMarkup' hona chahiye
+        # Thumbnail buttons poori tarah hata diye gaye hain
         settings_buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
@@ -441,10 +392,6 @@ async def callback_handler(client, query: CallbackQuery):
                 InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
             ],
             [
-                InlineKeyboardButton("🖼️ Set Thumbnail", callback_data="set_thumb"),
-                InlineKeyboardButton("🗑️ Remove Thumbnail", callback_data="remove_thumb")
-            ],
-            [
                 InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
             ]
         ])
@@ -452,8 +399,7 @@ async def callback_handler(client, query: CallbackQuery):
         await query.message.edit_text(
             f"⚙️ **Bot Settings Menu**\n\n"
             f"👤 **Account Status:** {login_status}\n"
-            f"📢 **Current Log Channel:** {current_status}\n"
-            f"🎨 **Custom Thumbnail:** {thumb_status}\n\n"
+            f"📢 **Current Log Channel:** {current_status}\n\n"
             f"Aap niche diye gaye buttons ka use karke apni settings manage kar sakte hain:",
             reply_markup=settings_buttons
         )
@@ -483,38 +429,3 @@ async def callback_handler(client, query: CallbackQuery):
             "*(Udaharan: -100123456789)*"
         )
 
-    elif query.data == "remove_channel":
-        await query.answer()
-        await set_dump_channel(user_id, None) 
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
-        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**", reply_markup=back_button)
-
-    elif query.data == "set_thumb":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = "awaiting_thumbnail"
-        await query.message.edit_text(
-            "🖼️ **Custom Thumbnail Set Karein:**\n\n"
-            "Aap jis photo ko video/files par lagana chahte hain, woh **Photo mujhe abhi bhejien**.\n\n"
-            "*(Bot us photo ko save karke aapki har file ke aage implement kar dega)*"
-        )
-
-    elif query.data == "remove_thumb":
-        await query.answer()
-        try:
-            await db.set_thumbnail(user_id, None)
-        except:
-            pass
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
-        await query.message.edit_text("🗑️ **Custom Thumbnail successfully hata diya gaya hai!**\n\nAb files apne original thumbnails ke sath hi send hongi.", reply_markup=back_button)
-
-    elif query.data == "back_home":
-        await query.answer()
-        buttons = [
-            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
-            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
-        await query.message.edit_text(text=welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
