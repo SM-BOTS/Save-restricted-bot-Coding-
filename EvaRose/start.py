@@ -358,7 +358,7 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
         print(f"Batch Auto-delete error: {e}")
 
 # ----------------------------------------------------
-# SETTINGS SYSTEM WITH 100% FIXED STRING LITERALS
+# SETTINGS BACKEND - 100% BULLETPROOF SHORT STRINGS
 # ----------------------------------------------------
 
 @Client.on_message(filters.command("settings") & filters.private)
@@ -367,15 +367,15 @@ async def settings_cmd(client, message):
     dump_id = await get_dump_channel(user_id)
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
-    text = "⚙️ **BOT SETTINGS MENU**\n\n"
+    text = "Bot Settings Menu\n\n"
     if dump_id:
-        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+        text += f"Dump Channel ID: {dump_id}\n"
     else:
-        text += "📢 **Dump Channel:** *Not Set*\n"
+        text += "Dump Channel: Not Set\n"
     if custom_cap:
-        text += f"📝 **Custom Caption:** `{custom_cap}`"
+        text += f"Custom Caption: {custom_cap}"
     else:
-        text += "📝 **Custom Caption:** *Not Set*"
+        text += "Custom Caption: Not Set"
         
     buttons = [
         [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
@@ -389,15 +389,15 @@ async def settings_callback(client, callback_query):
     dump_id = await get_dump_channel(user_id)
     custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
     
-    text = "⚙️ **BOT SETTINGS MENU**\n\n"
+    text = "Bot Settings Menu\n\n"
     if dump_id:
-        text += f"📢 **Dump Channel:** `{dump_id}`\n"
+        text += f"Dump Channel ID: {dump_id}\n"
     else:
-        text += "📢 **Dump Channel:** *Not Set*\n"
+        text += "Dump Channel: Not Set\n"
     if custom_cap:
-        text += f"📝 **Custom Caption:** `{custom_cap}`"
+        text += f"Custom Caption: {custom_cap}"
     else:
-        text += "📝 **Custom Caption:** *Not Set*"
+        text += "Custom Caption: Not Set"
         
     buttons = [
         [InlineKeyboardButton("⚙️ SET CHANNEL", callback_data="set_dump_info"), InlineKeyboardButton("❌ REMOVE CHANNEL", callback_data="rem_dump")],
@@ -406,23 +406,27 @@ async def settings_callback(client, callback_query):
     try:
         await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     except MessageNotModified:
-        await callback_query.answer("Aap pehle se hi settings menu me hain!")
+        await callback_query.answer("Already in settings menu!")
 
 @Client.on_callback_query(filters.regex("^set_dump_info$"))
 async def set_dump_callback(client, callback_query):
     await callback_query.message.delete()
-    txt = "⚙️ **SET DUMP CHANNEL:**\n\n1. Pehle bot ko channel me Admin banao.\n2. Phir channel ki ID bhejo:"
-    await client.send_message(chat_id=callback_query.from_user.id, text=txt)
+    await client.send_message(chat_id=callback_query.from_user.id, text="Send your channel ID:")
     try:
         response = await client.listen(chat_id=callback_query.from_user.id, timeout=300)
         if response and response.text:
             channel_id = int(response.text.strip())
             await set_dump_channel(callback_query.from_user.id, channel_id)
-            await response.reply_text("✅ **Success!** Dump Channel ID save ho gayi hai.")
+            await response.reply_text("Channel saved successfully.")
     except Exception as e:
-        await client.send_message(callback_query.from_user.id, f"⏱️ **Error:** {e}")
+        await client.send_message(callback_query.from_user.id, f"Error: {e}")
 
 @Client.on_callback_query(filters.regex("^rem_dump$"))
 async def remove_dump_callback(client, callback_query):
     await set_dump_channel(callback_query.from_user.id, None)
-    await callback_query.message.edit_text("❌ **Dump Channel successfully remove ka
+    await callback_query.message.edit_text("Channel removed.")
+
+@Client.on_callback_query(filters.regex("^set_caption_info$"))
+async def set_caption_callback(client, callback_query):
+    await callback_query.message.delete()
+    await client.send_message(chat_id=callback_query.from_user.id, 
