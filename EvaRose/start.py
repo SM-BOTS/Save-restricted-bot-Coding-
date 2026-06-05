@@ -10,7 +10,6 @@ from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME
-# DB se caption wale functions bhi import kar rahe hain (agar db.py me alag se hain, nahi toh direct db object use hoga)
 from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
@@ -22,7 +21,6 @@ class batch_temp(object):
 
 # Caption cleaner aur custom caption applicator utility function
 async def process_caption(user_id, original_caption):
-    # Pehle agar koi ganda copyright wala caption hai toh use saaf karo
     cleaned = original_caption
     if cleaned:
         pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
@@ -35,18 +33,12 @@ async def process_caption(user_id, original_caption):
             cleaned = cleaned.replace(bad_str, "")
         cleaned = cleaned.strip()
     
-    # Ab check karo ki user ne koi custom caption set kiya hai ya nahi
-    # Agar aapki db class me direct method hai toh 'await db.get_caption(user_id)' use karein
     try:
         custom_caption = await db.get_caption(user_id)
     except AttributeError:
-        # Agar db class ke andar function nahi hai toh fallback broad method laga sakte hain
         custom_caption = None
 
     if custom_caption:
-        # Agar user ne custom caption set kiya hai toh wahi dikhega
-        # Agar aap chahte ho ki purana caption bhi rahe aur naya bhi jude, toh aap niche wala use kar sakte hain:
-        # return f"{cleaned}\n\n{custom_caption}" if cleaned else custom_caption
         return custom_caption
     
     return cleaned if cleaned else None
@@ -109,7 +101,6 @@ async def send_cancel(client: Client, message: Message):
 async def save(client: Client, message: Message):
     user_id = message.from_user.id
     
-    # ⚙️ Handling Channel ID input when user clicks "Set Channel"
     if batch_temp.USER_STATES.get(user_id) == "awaiting_channel_id":
         try:
             channel_id = int(message.text)
@@ -122,7 +113,6 @@ async def save(client: Client, message: Message):
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
 
-    # ⚙️ Handling Custom Caption input when user clicks "Set Caption"
     if batch_temp.USER_STATES.get(user_id) == "awaiting_caption":
         custom_cap = message.text
         try:
@@ -238,7 +228,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         return 
     if "Text" == msg_type:
         try:
-            # Text messages ke liye caption cleaner + custom caption process lagaya
             text_msg = await process_caption(message.from_user.id, msg.text)
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
@@ -267,157 +256,4 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             os.remove(f'{message.id}downstatus.txt')
         return await smsg.delete()
         
-    if batch_temp.IS_BATCH.get(message.from_user.id):
-        return 
-    asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
-    
-    # Sabhi files ke liye process_caption use kar rahe hain jo naya caption manage karega
-    caption = await process_caption(message.from_user.id, msg.caption)
-    
-    if batch_temp.IS_BATCH.get(message.from_user.id):
-        return 
-            
-    uploaded_msg = None
-    if "Document" == msg_type:
-        try:
-            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-    elif "Video" == msg_type:
-        try:
-            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-    elif "Animation" == msg_type:
-        try:
-            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-    elif "Sticker" == msg_type:
-        try:
-            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
-    elif "Voice" == msg_type:
-        try:
-            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-    elif "Audio" == msg_type:
-        try:
-            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-    elif "Photo" == msg_type:
-        try:
-            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-    
-    if uploaded_msg:
-        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
-    if uploaded_msg and user_dump:
-        try:
-            await uploaded_msg.copy(chat_id=int(user_dump))
-        except Exception as e:
-            print(f"Dump forward error: {e}")
-    if os.path.exists(f'{message.id}upstatus.txt'):
-        os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(file):
-        os.remove(file)
-    try:
-        await client.delete_messages(message.chat.id, [smsg.id])
-    except:
-        pass
-
-def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
-    try:
-        msg.document.file_id
-        return "Document"
-    except: pass
-    try:
-        msg.video.file_id
-        return "Video"
-    except: pass
-    try:
-        msg.animation.file_id
-        return "Animation"
-    except: pass
-    try:
-        msg.sticker.file_id
-        return "Sticker"
-    except: pass
-    try:
-        msg.voice.file_id
-        return "Voice"
-    except: pass
-    try:
-        msg.audio.file_id
-        return "Audio"
-    except: pass
-    try:
-        msg.photo.file_id
-        return "Photo"
-    except: pass
-    try:
-        msg.text
-        return "Text"
-    except: pass
-
-# 🔘 Updates Callback Query Handler
-@Client.on_callback_query()
-async def callback_handler(client, query: CallbackQuery):
-    user_id = query.from_user.id
-
-    if query.data == "settings":
-        user_dump = await get_dump_channel(user_id)
-        current_status = f"`{user_dump}`" if user_dump else "Not Set"
-        
-        try:
-            user_cap = await db.get_caption(user_id)
-        except AttributeError:
-            user_cap = None
-        current_caption = f"\n\n📝 **Current Caption:**\n`{user_cap}`" if user_cap else "\n\n📝 **Current Caption:** Not Set"
-        
-        # Naye buttons add kiye: Set Caption aur Remove Caption ke liye
-        settings_buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
-                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
-            ],
-            [
-                InlineKeyboardButton("📝 Set Caption", callback_data="set_caption"),
-                InlineKeyboardButton("🗑️ Remove Caption", callback_data="remove_caption")
-            ],
-            [
-                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
-            ]
-        ])
-        
-        await query.message.edit_text(
-           
+    if batch_temp.IS_
