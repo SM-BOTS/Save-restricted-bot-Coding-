@@ -81,7 +81,7 @@ async def send_start(client: Client, message: Message):
     
     welcome_text = f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
     
-    # 🔥 Ekdum simple clean check: Agar START_IMAGE_SHOW True hai toh photo bhejo, nahi toh direct message.
+    # Simple image toggle check
     if START_IMAGE_SHOW == True and START_IMAGE_URL:
         try:
             await client.send_photo(
@@ -93,30 +93,9 @@ async def send_start(client: Client, message: Message):
                 parse_mode=enums.ParseMode.HTML
             )
         except Exception as e:
-            # Safe side: Agar photo link down ho toh text chala jaye
             await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             print(f"Welcome Image Error: {e}")
     else:
-        # Agar config me False kiya hai toh bina image ke bhejega
-        await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-            
-    elif START_MEDIA_TYPE.lower() == "video" and START_VIDEO_URL:
-        try:
-            await client.send_video(
-                chat_id=message.chat.id, 
-                video=START_VIDEO_URL, 
-                caption=welcome_text, 
-                reply_markup=reply_markup, 
-                reply_to_message_id=message.id, 
-                parse_mode=enums.ParseMode.HTML
-            )
-        except Exception as e:
-            # Agar link kharab ho toh safe side text chala jaye
-            await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-            print(f"Welcome Video Error: {e}")
-            
-    else:
-        # Agar "none" ho ya spelling galat ho, toh bina media ke normal message jayega
         await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
