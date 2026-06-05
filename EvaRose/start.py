@@ -70,6 +70,7 @@ def progress(current, total, message, type):
 async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
+        
     buttons = [
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
@@ -77,8 +78,43 @@ async def send_start(client: Client, message: Message):
          InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
-    await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
-
+    
+    welcome_text = f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
+    
+    # 🖼️ Media type check karne ka logic (Dono me se koi ek hi chalega config.py ke mutabik)
+    if START_MEDIA_TYPE.lower() == "image" and START_IMAGE_URL:
+        try:
+            await client.send_photo(
+                chat_id=message.chat.id, 
+                photo=START_IMAGE_URL, 
+                caption=welcome_text, 
+                reply_markup=reply_markup, 
+                reply_to_message_id=message.id, 
+                parse_mode=enums.ParseMode.HTML
+            )
+        except Exception as e:
+            # Agar link kharab ho toh safe side text chala jaye
+            await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            print(f"Welcome Image Error: {e}")
+            
+    elif START_MEDIA_TYPE.lower() == "video" and START_VIDEO_URL:
+        try:
+            await client.send_video(
+                chat_id=message.chat.id, 
+                video=START_VIDEO_URL, 
+                caption=welcome_text, 
+                reply_markup=reply_markup, 
+                reply_to_message_id=message.id, 
+                parse_mode=enums.ParseMode.HTML
+            )
+        except Exception as e:
+            # Agar link kharab ho toh safe side text chala jaye
+            await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            print(f"Welcome Video Error: {e}")
+            
+    else:
+        # Agar "none" ho ya spelling galat ho, toh bina media ke normal message jayega
+        await client.send_message(chat_id=message.chat.id, text=welcome_text, reply_markup=reply_markup, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
     await client.send_message(chat_id=message.chat.id, text=f"{HELP_TXT}")
