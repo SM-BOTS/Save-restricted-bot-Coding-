@@ -372,7 +372,7 @@ async def callback_handler(client, query: CallbackQuery):
             is_logged_in = None
         login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
         
-        # 🆕 Login / Logout buttons ko Set/Remove Channel ke upar rakh diya hai
+        # Login / Logout buttons ko Set/Remove Channel ke upar rakh diya hai
         settings_buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
@@ -424,4 +424,22 @@ async def callback_handler(client, query: CallbackQuery):
         )
 
     elif query.data == "remove_channel":
-        
+        await set_dump_channel(user_id, None) 
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
+        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**\n\nAb jo bhi files aap download karenge woh kisi channel me nahi jayengi.", reply_markup=back_button)
+
+    elif query.data == "back_home":
+        buttons = [
+            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.message.edit_text(
+            f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", 
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    await query.answer()
