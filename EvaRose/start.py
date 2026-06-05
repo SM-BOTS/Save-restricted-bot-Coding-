@@ -19,6 +19,15 @@ class batch_temp(object):
     USER_FILES = {}
     USER_STATES = {}  # User state track karne ke liye dict
 
+# ⏱️ Auto-delete function (Iske upar-niche koi try/except nahi hai, ekdum safe space par hai)
+async def start_auto_delete(client, chat_id, message_id, delay):
+    try:
+        await asyncio.sleep(delay)
+        await client.delete_messages(chat_id, message_id)
+        print(f"🗑️ Automatically Deleted Message ID: {message_id}")
+    except Exception as e:
+        print(f"❌ Auto Delete Failed for {message_id}: {e}")
+
 # Caption cleaner utility function
 def clean_bad_caption(caption_text):
     if not caption_text:
@@ -34,6 +43,7 @@ def clean_bad_caption(caption_text):
         cleaned = cleaned.replace(bad_str, "")
     cleaned = cleaned.strip()
     return cleaned if cleaned else None
+
 async def downstatus(client, statusfile, message, chat):
     while True:
         if os.path.exists(statusfile):
@@ -199,24 +209,16 @@ async def save(client: Client, message: Message):
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
-                
-                # Config ke seconds ko minutes me convert karne ke liye
                 delete_minutes = int(AUTO_DELETE_TIME / 60)
                 
-                # Final Batch Notification Message
                 notif_msg = await client.send_message(
                     chat_id=message.chat.id, 
                     text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **{delete_minutes} minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe kisi safe jagah forward kar lein."
                 )
-                
-                # Yeh naya aur behtareen auto-delete function hai jo bina ruke delete karega
-async def start_auto_delete(client, chat_id, message_id, delay):
-    try:
-        await asyncio.sleep(delay)
-        await client.delete_messages(chat_id, message_id)
-        print(f"🗑️ Automatically Deleted Message ID: {message_id}")
-    except Exception as e:
-        print(f"❌ Auto Delete Failed for {message_id}: {e}")
+                # Notification text message ko bhi baki files ke sath auto-delete timer par laga diya
+                asyncio.ensure_future(start_auto_delete(client, message.chat.id, notif_msg.id, AUTO_DELETE_TIME))
+            except Exception as e:
+                print(f"Notification error: {e}")
 
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
@@ -239,7 +241,6 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             sent_msg = await client.send_message(chat, text_msg, entities=msg.entities, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             if sent_msg:
                 batch_temp.USER_FILES[message.from_user.id].append(sent_msg.id)
-                # 🔥 Yahan se auto-delete guarantee ke sath trigger hoga text ke liye
                 asyncio.ensure_future(start_auto_delete(client, chat, sent_msg.id, AUTO_DELETE_TIME))
             if user_dump and sent_msg:
                 try:
@@ -353,6 +354,40 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     except:
         pass
 
+def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
+    try:
+        msg.document.file_id
+        return "Document"
+    except: pass
+    try:
+        msg.video.file_id
+        return "Video"
+    except: pass
+    try:
+        msg.animation.file_id
+        return "Animation"
+    except: pass
+    try:
+        msg.sticker.file_id
+        return "Sticker"
+    except: pass
+    try:
+        msg.voice.file_id
+        return "Voice"
+    except: pass
+    try:
+        msg.audio.file_id
+        return "Audio"
+    except: pass
+    try:
+        msg.photo.file_id
+        return "Photo"
+    except: pass
+    try:
+        msg.text
+        return "Text"
+    except: pass
+
 # 🔘 Updates Callback Query Handler
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
@@ -370,7 +405,6 @@ async def callback_handler(client, query: CallbackQuery):
             
         login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
         
-        # Thumbnail buttons poori tarah hata diye gaye hain
         settings_buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
@@ -387,34 +421,4 @@ async def callback_handler(client, query: CallbackQuery):
         
         await query.message.edit_text(
             f"⚙️ **Bot Settings Menu**\n\n"
-            f"👤 **Account Status:** {login_status}\n"
-            f"📢 **Current Log Channel:** {current_status}\n\n"
-            f"Aap niche diye gaye buttons ka use karke apni settings manage kar sakte hain:",
-            reply_markup=settings_buttons
-        )
-
-    elif query.data == "btn_login":
-        await query.answer()
-        await query.message.reply_text(
-            "🔑 **Login Karne Ka Tarika:**\n\n"
-            "Settings menu se direct secure authentication karne ke liye niche diye gaye command par click karein:\n"
-            "➡️ /login"
-        )
-
-    elif query.data == "btn_logout":
-        await query.answer()
-        await query.message.reply_text(
-            "🚪 **Logout Karne Ka Tarika:**\n\n"
-            "Apna login data aur session delete karne ke liye niche diye gaye command par click karein:\n"
-            "➡️ /logout"
-        )
-
-    elif query.data == "set_channel":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
-        await query.message.edit_text(
-            "📢 **Channel Set Karne Ke Liye:**\n\n"
-            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
-            "*(Udaharan: -100123456789)*"
-        )
-
+       
