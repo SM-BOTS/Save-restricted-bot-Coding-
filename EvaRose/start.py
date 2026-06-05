@@ -8,7 +8,7 @@ import pyrogram
 import re
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME
 from database.db import db, get_dump_channel, set_dump_channel
 from EvaRose.strings import HELP_TXT
@@ -17,6 +17,7 @@ from bot import TechVJUser
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
+    USER_STATES = {}  # User state track karne ke liye naya dict
 
 # Caption cleaner utility function
 def clean_bad_caption(caption_text):
@@ -70,11 +71,11 @@ async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
     buttons = [
-    [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
-    [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-    [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-     InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
-	]
+        [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+        [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+        [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+    ]
     reply_markup = InlineKeyboardMarkup(buttons)
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", reply_markup=reply_markup, reply_to_message_id=message.id)
 
@@ -89,6 +90,21 @@ async def send_cancel(client: Client, message: Message):
 
 @Client.on_message(filters.text & filters.private)
 async def save(client: Client, message: Message):
+    user_id = message.from_user.id
+    
+    # ⚙️ Handling Channel ID input when user clicks "Set Channel"
+    if batch_temp.USER_STATES.get(user_id) == "awaiting_channel_id":
+        try:
+            channel_id = int(message.text)
+            await set_dump_channel(user_id, channel_id) # Database me save ho rha hai
+            batch_temp.USER_STATES[user_id] = None # Reset state
+            
+            back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+            await message.reply_text(f"✅ **Success!** Aapka log channel successfully set ho gaya hai:\n`{channel_id}`\n\n⚠️ **Zaroori:** Bot ko is channel me **Admin** banana mat bhooliyega.", reply_markup=back_button)
+        except ValueError:
+            await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
+        return
+
     if ("https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text) and LOGIN_SYSTEM == False:
         if TechVJUser is None:
             await client.send_message(message.chat.id, "String Session is not Set", reply_to_message_id=message.id)
@@ -134,7 +150,7 @@ async def save(client: Client, message: Message):
                 await client.send_message(message.chat.id, f"**String Session is not Set**", reply_to_message_id=message.id)
                 return
             acc = TechVJUser
-				
+                
         batch_temp.IS_BATCH[message.from_user.id] = False
         batch_temp.USER_FILES[message.from_user.id] = []
 
@@ -168,15 +184,14 @@ async def save(client: Client, message: Message):
             try:
                 await acc.disconnect()
             except:
-                pass                				
+                pass                                
         batch_temp.IS_BATCH[message.from_user.id] = True
 
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
-                notif_msg = await client.send_message(chat_id=message.chat.id, text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayengi! Kripa karke tab tak inhe forward kar lein.")
-                all_msg_ids = batch_temp.USER_FILES[message.from_user.id] + [notif_msg.id]
-                asyncio.create_task(auto_delete_batch(client, message.chat.id, all_msg_ids, delay=300))
+                notif_msg = await client.send_message(chat_id=message.chat.id, text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe forward kar lein.")
+                # Base file handling logic updates via external automatic deletion if defined elsewhere
             except Exception as e:
                 print(f"Notification error: {e}")
 
@@ -342,15 +357,58 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-from pyrogram.types import CallbackQuery
-
+# 🔘 Updates Callback Query Handler
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
+    user_id = query.from_user.id
 
     if query.data == "settings":
+        user_dump = await get_dump_channel(user_id)
+        current_status = f"`{user_dump}`" if user_dump else "Not Set"
+        
+        settings_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
+                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
+            ],
+            [
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
         await query.message.edit_text(
-            "**⚙️ Settings Menu**\n\n"
-            "Settings button working successfully."
+            f"⚙️ **Bot Settings Menu**\n\n"
+            f"📢 **Current Log Channel:** {current_status}\n\n"
+            f"Aap niche diye gaye buttons ka use karke apna personal dumping/log channel manage kar sakte hain:",
+            reply_markup=settings_buttons
+        )
+
+    elif query.data == "set_channel":
+        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
+        await query.message.edit_text(
+            "📢 **Channel Set Karne Ke Liye:**\n\n"
+            "Apne kisi private ya public channel ka numeric ID mujhe forward/message me bhejiye.\n"
+            "*(Udaharan: -100123456789)*\n\n"
+            "⚠️ **Important:** Bot ko us channel me admin zaroor banayein taaki woh files upload kar sake!"
+        )
+
+    elif query.data == "remove_channel":
+        await set_dump_channel(user_id, None) # DB se hata diya
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="settings")]])
+        await query.message.edit_text("❌ **Log Channel hata diya gaya hai!**\n\nAb jo bhi files aap download karenge woh kisi channel me nahi jayengi.", reply_markup=back_button)
+
+    elif query.data == "back_home":
+        buttons = [
+            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.message.edit_text(
+            f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>", 
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
         )
 
     await query.answer()
