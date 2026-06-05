@@ -418,4 +418,15 @@ async def callback_handler(client, query: CallbackQuery):
                 InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
             ],
             [
-                InlineKeyboardButton("⬅️ Back to Home", callback
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
+            ]
+        ])
+        
+        await query.message.edit_text(
+            f"⚙️ **Bot Settings Menu**\n\n"
+            f"👤 **User:** {query.from_user.mention}\n"
+            f"🔑 **Status:** {login_status}\n"
+            f"📢 **Log Channel:** {current_status}\n\n"
+            f"Niche diye gaye buttons se setup manage karein:",
+            reply_markup=settings_buttons
+        )
