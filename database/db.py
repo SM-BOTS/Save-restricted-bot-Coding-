@@ -1,8 +1,7 @@
 import motor.motor_asyncio
-import time  # 👈 Bilkul sahi lagaya hai
+import time  
 from config import DB_URI, DB_NAME
 from pyrogram.errors import MessageNotModified
-# ... aapke baaki purane imports (jaise motor, pymongo jo bhi ho) ...
 
 class Database:
     
@@ -14,12 +13,13 @@ class Database:
     def new_user(self, id):
         return dict(
             id=id,
-            join_date=None,
+            join_date=time.time(), # Fixed join_date
             upload_count=0,
             dump_channel=None,
             session=None,
             api_id=None,
-            api_hash=None
+            api_hash=None,
+            last_verified=0 # Token verification field initialized
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -65,6 +65,28 @@ class Database:
 
     async def set_api_hash(self, id, api_hash):
         await self.col.update_one({'id': int(id)}, {'$set': {'api_hash': api_hash}}, upsert=True)
+
+    # 🔐 TOKEN VERIFICATION SYSTEM FUNCTIONS (ADDED SUCCESSFULLY)
+    async def update_verification(self, user_id):
+        """User ke verification ka current timestamp save karne ke liye"""
+        current_time = time.time()
+        await self.col.update_one(
+            {"id": int(user_id)},
+            {"$set": {"last_verified": current_time}},
+            upsert=True
+        )
+
+    async def is_user_verified(self, user_id, expire_hours):
+        """Check karega ki kya user ka token abhi bhi valid hai"""
+        user = await self.col.find_one({"id": int(user_id)})
+        if not user:
+            return False
+        last_verified = user.get("last_verified", 0)
+        current_time = time.time()
+        expire_seconds = expire_hours * 3600
+        if (current_time - last_verified) < expire_seconds:
+            return True # Token abhi chalega
+        return False # Token expire ho gaya
 
 
 # Database client instance ka setup
