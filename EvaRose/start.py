@@ -195,13 +195,25 @@ async def save(client: Client, message: Message):
                 pass                                
         batch_temp.IS_BATCH[message.from_user.id] = True
 
+        # 🔔 Jab saari files upload ho jayein, tab end me ye notification jayega
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
-                notif_msg = await client.send_message(chat_id=message.chat.id, text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **5 minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe forward kar lein.")
+                
+                # Config ke seconds ko minutes me convert karne ke liye
+                delete_minutes = int(AUTO_DELETE_TIME / 60)
+                
+                # Final Batch Notification Message
+                notif_msg = await client.send_message(
+                    chat_id=message.chat.id, 
+                    text=f"✅ **Task Completed Successfully!**\n\nAapki total **{total_sent}** files upload kar di gayi hain.\n\n⚠️ **NOTE:** Security reasons ki wajah se yeh saari files agle **{delete_minutes} minutes** me automatically delete ho jayegi! Kripa karke tab tak inhe kisi safe jagah forward kar lein."
+                )
+                
+                # Agar aap chahte hain ki ye notification message bhi files ke sath hi delete ho jaye, toh niche wali line rehne dena:
+                asyncio.create_task(auto_delete_msg(client, message.chat.id, notif_msg.id, AUTO_DELETE_TIME))
+                
             except Exception as e:
                 print(f"Notification error: {e}")
-
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty:
