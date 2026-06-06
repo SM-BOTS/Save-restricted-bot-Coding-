@@ -39,34 +39,31 @@ async def start_auto_delete(client, chat_id, message_id, delay):
     except Exception as e:
         print(f"❌ Auto Delete Failed for {message_id}: {e}")
 
-# 🔗 MULTI-SHORTENER UNIVERSAL LINK GENERATOR
+# Universal Shortener Link Generator (One-Time Token Fixed)
 def get_any_shorturl(user_id):
     try:
-        # User bypass karne ke baad wapas isi bot par redirect hoga
-        bot_link = f"https://t.me/{BOT_USERNAME}?start=verify_{user_id}"
+        # 🎲 Ek unique random token ID generate karna
+        unique_token = str(uuid.uuid4())[:8]
         
-        # Website URL aur API ko safai se clean karke jodna
+        # 💾 Is unique token ko database me background task ke roop me save karna
+        loop = asyncio.get_event_loop()
+        loop.create_task(save_active_token(user_id, unique_token)) # 👈 db. hata diya hai
+        
+        # 🔗 Bot ke start link me ab unique token_id pass hoga
+        bot_link = f"https://t.me/{BOT_USERNAME}?start=verify_{user_id}_{unique_token}"
+        
         clean_url = SHORTENER_URL.replace("https://", "").replace("http://", "").strip("/")
         final_api_call = f"https://{clean_url}/api?api={SHORTENER_API}&url={bot_link}"
         
         response = requests.get(final_api_call)
-        
-        # Alag-alag shortener websites ke JSON response formats ko handle karna
         try:
             res_json = response.json()
-            if "shortenedUrl" in res_json:
-                return res_json.get("shortenedUrl")
-            elif "shortened_url" in res_json:
-                return res_json.get("shortened_url")
-            elif "url" in res_json:
-                return res_json.get("url")
-            elif "data" in res_json and "short_url" in res_json["data"]:
-                return res_json["data"]["short_url"]
+            if "shortenedUrl" in res_json: return res_json.get("shortenedUrl")
+            elif "shortened_url" in res_json: return res_json.get("shortened_url")
+            elif "url" in res_json: return res_json.get("url")
+            elif "data" in res_json and "short_url" in res_json["data"]: return res_json["data"]["short_url"]
         except ValueError:
-            # Agar website JSON ki jagah direct plain text me short link de
-            if response.text.startswith("http"):
-                return response.text.strip()
-                
+            if response.text.startswith("http"): return response.text.strip()
     except Exception as e:
         print(f"Universal Shortener API Error: {e}")
     return None
