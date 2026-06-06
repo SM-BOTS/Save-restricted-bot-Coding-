@@ -491,11 +491,12 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-# 🔘 Updates Callback Query Handler
+# 🔘 Updates Callback Query Handler (FULL & FIXED)
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
     user_id = query.from_user.id
 
+    # 1️⃣ SETTINGS MENU OPEN KARNA
     if query.data == "settings":
         await query.answer()
         user_dump = await get_dump_channel(user_id)
@@ -530,3 +531,50 @@ async def callback_handler(client, query: CallbackQuery):
             f"Niche diye gaye buttons se setup manage karein:",
             reply_markup=settings_buttons
         )
+
+    # 2️⃣ SET CHANNEL BUTTON CLICK LOGIC
+    elif query.data == "set_channel":
+        await query.answer()
+        # User ka state change karenge taaki bot samajh sake ki agla message channel ID hai
+        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
+        
+        cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
+        await query.message.edit_text(
+            "📢 **Set Log Channel ID**\n\n"
+            "Kripya apne us channel ki **Numeric ID** bhejiye jahan aap files forward (dump) karna chahte hain.\n\n"
+            "👉 **Example:** `-100123456789`\n\n"
+            "⚠️ **Zaroori:** ID bhejne se pehle bot ko us channel me **Admin** zaroor bana dena!",
+            reply_markup=cancel_button
+        )
+
+    # 3️⃣ REMOVE CHANNEL BUTTON CLICK LOGIC
+    elif query.data == "remove_channel":
+        await query.answer()
+        await set_dump_channel(user_id, None) # Database me None save kar dega
+        
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+        await query.message.edit_text(
+            "✅ **Success!** Aapka log/dump channel successfully remove kar diya gaya hai.",
+            reply_markup=back_button
+        )
+
+    # 4️⃣ BACK TO HOME BUTTON CLICK LOGIC
+    elif query.data == "back_home":
+        await query.answer()
+        buttons = [
+            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
+            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
+        await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
+
+    # 5️⃣ LOGIN INSTRUCTIONS TRIGGER
+    elif query.data == "btn_login":
+        await query.answer("Kripya group/chat me direct /login command type karein!", show_alert=True)
+
+    # 6️⃣ LOGOUT INSTRUCTIONS TRIGGER
+    elif query.data == "btn_logout":
+        await query.answer("Kripya group/chat me direct /logout command type karein!", show_alert=True)
