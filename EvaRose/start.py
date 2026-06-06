@@ -508,12 +508,6 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-
-    try:
-            await db.set_api_hash(user_id, None)
-        except:
-            pass
-
 # 🔘 Updates Callback Query Handler (MESSAGE_NOT_MODIFIED ERROR FIXED)
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
