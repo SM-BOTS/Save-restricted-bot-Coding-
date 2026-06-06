@@ -321,21 +321,18 @@ async def save(client: Client, message: Message):
                 pass                                
         batch_temp.IS_BATCH[message.from_user.id] = True
 
-        # 🔔 Jab saari batch files/single files upload ho jayein, tab end me ek single notification jayega
+        # 🔔 Final Batch Notification Tracker
         if batch_temp.USER_FILES.get(message.from_user.id):
             try:
                 total_sent = len(batch_temp.USER_FILES[message.from_user.id])
                 delete_minutes = int(AUTO_DELETE_TIME / 60)
-                
                 notif_msg = await client.send_message(
                     chat_id=message.chat.id, 
                     text=f"🚨 **Notification:**\n\nAapki saari requested files (**{total_sent}**) deliver ho chuki hain.\n\n⚠️ **WARNING:** Security aur copyright strikes se bachne ke liye yeh saari files aur yeh notification text ab se **{delete_minutes} minutes** me permanently **auto-delete** ho jayenge!"
                 )
-                # Notification text message ko bhi baki files ke sath auto-delete timer par laga diya
                 asyncio.ensure_future(start_auto_delete(client, message.chat.id, notif_msg.id, AUTO_DELETE_TIME))
             except Exception as e:
                 print(f"Notification error: {e}")
-
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty:
