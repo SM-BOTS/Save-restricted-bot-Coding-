@@ -118,3 +118,32 @@ async def auto_forward_to_dump(client, user_id, message_to_copy):
             await message_to_copy.copy(chat_id=int(dump_id))
         except Exception as e:
             print(f"Dump forward error: {e}")
+
+# -------------------------------------------------------------
+    # 🔐 ONE-TIME USE TOKEN SYSTEM (BY EVAROSE)
+    # -------------------------------------------------------------
+
+    async def save_active_token(self, user_id, token_id):
+        """User ke liye ek naya temporary active token save karne ke liye"""
+        await self.col.update_one(
+            {"id": int(user_id)},
+            {"$set": {"active_token": token_id}},
+            upsert=True
+        )
+
+    async def validate_and_consume_token(self, user_id, token_id):
+        """Check karega ki kya token sahi hai, aur sahi hone par use turant delete (consume) kar dega"""
+        user = await self.col.find_one({"id": int(user_id)})
+        if not user:
+            return False
+            
+        active_token = user.get("active_token", None)
+        
+        # Agar token match hota hai, toh use clear kar do taaki dobara use na ho sake
+        if active_token and active_token == token_id:
+            await self.col.update_one(
+                {"id": int(user_id)},
+                {"$set": {"active_token": None}} # Token consumed!
+            )
+            return True
+        return False
