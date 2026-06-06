@@ -38,7 +38,7 @@ CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003703565044")
 
 # --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
 VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
-BOT_USERNAME = os.environ.get("BOT_USERNAME", "Sjdjejwjsjsibot")
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "Ggefsddwdebot")
 
 # 🌐 Website ka domain (Example: vplink.co, gplinks.in)
 SHORTENER_URL = os.environ.get("SHORTENER_URL", "vplink.in")
