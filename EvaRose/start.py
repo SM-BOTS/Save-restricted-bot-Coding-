@@ -578,10 +578,53 @@ async def callback_handler(client, query: CallbackQuery):
         welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
         await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
 
-    # 5️⃣ LOGIN INSTRUCTIONS TRIGGER
+    # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (DIRECT PHONE NUMBER PROCESS)
     elif query.data == "btn_login":
-        await query.answer("Kripya group/chat me direct /login command type karein!", show_alert=True)
+        await query.answer()
+        # Pehle check karenge ki user pehle se logged in toh nahi hai
+        is_logged_in = await db.get_session(user_id)
+        if is_logged_in:
+            await query.message.edit_text(
+                "⚠️ **Aap pehle se logged in hain!**\n\nAgar aapko naya account jodna hai, toh pehle niche diye gaye button se **Logout** kijiye.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+            )
+            return
 
-    # 6️⃣ LOGOUT INSTRUCTIONS TRIGGER
+        # User ka state badal kar login process active kar denge
+        batch_temp.USER_STATES[user_id] = "awaiting_phone_number"
+        
+        cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
+        await query.message.edit_text(
+            "🔑 **Telegram Login Process**\n\n"
+            "Kripya apna Telegram **Phone Number** niche format me bhejiye:\n\n"
+            "👉 **Example:** `+919876543210`\n\n"
+            "⚠️ **Zaroori:** Country code (jaise India ke liye `+91`) lagana zaroori hai!",
+            reply_markup=cancel_button
+        )
+
+    # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC (DIRECT DATABASE SE SESSION CLEAR)
     elif query.data == "btn_logout":
-        await query.answer("Kripya group/chat me direct /logout command type karein!", show_alert=True)
+        await query.answer()
+        is_logged_in = await db.get_session(user_id)
+        
+        if not is_logged_in:
+            await query.message.edit_text(
+                "❌ **Aap logged in nahi hain!**\n\nLogout karne ke liye pehle login hona zaroori hai.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+            )
+            return
+            
+        # Database se session aur api details ko clear (None) karna
+        await db.rem_session(user_id)
+        try:
+            # Agar aapki repo me api_id/api_hash clear karne ke functions hain
+            await db.set_api_id(user_id, None)
+            await db.set_api_hash(user_id, None)
+        except:
+            pass
+            
+        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+        await query.message.edit_text(
+            "✅ **Successfully Logged Out!**\n\nAapka Telegram session is bot se surakshit tarike se hata diya gaya hai.",
+            reply_markup=back_button
+        )
