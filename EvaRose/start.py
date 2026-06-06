@@ -194,6 +194,29 @@ async def save(client: Client, message: Message):
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
 
+    # 🔑 FIXED: Phone Number Input State Handle (Direct OTP Trigger)
+    if batch_temp.USER_STATES.get(user_id) == "awaiting_phone_number":
+        phone_number = message.text.strip()
+        if not phone_number.startswith("+"):
+            await message.reply_text("❌ **Galat Format!** Kripya number ko `+` aur country code ke sath bhejiye (Jaise: `+919876543210`).")
+            return
+            
+        batch_temp.USER_STATES[user_id] = None # State reset
+        
+        # 🔄 Text badal kar automatic /login command trigger karna
+        message.text = f"/login {phone_number}"
+        
+        # ⚡ Pom Pom repo ke original login handler ko call karna taaki OTP aa jaye
+        from plugins.login import login_handler  # Agar aapki file ka naam plugins/login.py hai
+        try:
+            await login_handler(client, message)
+        except Exception as e:
+            # Agar upar wala import kaam na kare, toh system ko command execute karne do
+            await message.reply_text("🔄 **Processing...** OTP mangwaya ja raha hai, kripya 10-15 seconds rukhein...")
+            # Ye line aapke bot ke main handler ko bolti hai ki is message ko fir se read kare as a command
+            await client.send_message(chat_id=message.chat.id, text=f"/login {phone_number}")
+        return
+
     # --- 🔐 TOKEN VERIFICATION WALL START ---
     if "https://t.me/" in message.text and not message.text.startswith("/"):
         is_verified = await db.is_user_verified(user_id, VERIFY_EXPIRE_HOURS)
