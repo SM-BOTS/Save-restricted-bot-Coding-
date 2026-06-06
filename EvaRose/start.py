@@ -491,7 +491,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-# 🔘 Updates Callback Query Handler (FULL & FIXED)
+# 🔘 Updates Callback Query Handler (STATE-RESET FIXED BY EVAROSE)
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
     user_id = query.from_user.id
@@ -499,6 +499,9 @@ async def callback_handler(client, query: CallbackQuery):
     # 1️⃣ SETTINGS MENU OPEN KARNA
     if query.data == "settings":
         await query.answer()
+        # 🛠️ FIX: Settings me aate hi agar koi adhoora state ho toh use reset kar do
+        batch_temp.USER_STATES[user_id] = None
+        
         user_dump = await get_dump_channel(user_id)
         current_status = f"`{user_dump}`" if user_dump else "Not Set"
         
@@ -550,7 +553,8 @@ async def callback_handler(client, query: CallbackQuery):
     # 3️⃣ REMOVE CHANNEL BUTTON CLICK LOGIC
     elif query.data == "remove_channel":
         await query.answer()
-        await set_dump_channel(user_id, None) # Database me None save kar dega
+        batch_temp.USER_STATES[user_id] = None # Safe reset
+        await set_dump_channel(user_id, None) 
         
         back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
         await query.message.edit_text(
@@ -561,11 +565,14 @@ async def callback_handler(client, query: CallbackQuery):
     # 4️⃣ BACK TO HOME BUTTON CLICK LOGIC
     elif query.data == "back_home":
         await query.answer()
+        # 🛠️ FIX: Home par jate hi state ko None kar do taaki normal chatting ya links kaam karein
+        batch_temp.USER_STATES[user_id] = None
+        
         buttons = [
             [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
             [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
             [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛê ᴄʜ", url="https://t.me/vj_bots")]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
         welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
