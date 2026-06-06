@@ -3,16 +3,25 @@
 # Ask Doubt on telegram @KingVJ01
 
 import os
+# Don't Remove Credit Tg - @VJ_Bots
+# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
+# Ask Doubt on telegram @KingVJ01
+
+import os
 import asyncio
 import pyrogram
 import re
 import time
 import requests
+import uuid  # 👈 One-time random token generate karne ke liye added
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, START_IMAGE_SHOW, START_IMAGE_URL, AUTO_DELETE_TIME, VERIFY_EXPIRE_HOURS, SHORTENER_URL, SHORTENER_API, BOT_USERNAME
-from database.db import db, get_dump_channel, set_dump_channel
+
+# 🔐 Database se purane functions ke sath naye functions bhi import kar liye hain
+from database.db import db, get_dump_channel, set_dump_channel, save_active_token, validate_and_consume_token
+
 from EvaRose.strings import HELP_TXT
 from bot import TechVJUser
 
