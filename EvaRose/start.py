@@ -450,13 +450,12 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         os.remove(f'{message.id}upstatus.txt')
     await smsg.delete()
 
-
-# 🔘 Updates Callback Query Handler (MESSAGE_NOT_MODIFIED ERROR & STATE RESET FIXED)
+# 🔘 Updates Callback Query Handler (LOGIN & LOGOUT BUTTONS REMOVED)
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
     user_id = query.from_user.id
 
-    # 1️⃣ SETTINGS MENU OPEN KARNA
+    # 1️⃣ SETTINGS MENU OPEN KARNA (Bina Login/Logout Ke)
     if query.data == "settings":
         await query.answer()
         batch_temp.USER_STATES[user_id] = None # Reset state
@@ -464,16 +463,8 @@ async def callback_handler(client, query: CallbackQuery):
         user_dump = await get_dump_channel(user_id)
         current_status = f"`{user_dump}`" if user_dump else "Not Set"
         
-        try: is_logged_in = await db.get_session(user_id)
-        except: is_logged_in = None
-            
-        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
-        
+        # ✂️ Login aur Logout ke buttons yahan se poori tarah hata diye hain
         settings_buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
-                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
-            ],
             [
                 InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
                 InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
@@ -487,7 +478,6 @@ async def callback_handler(client, query: CallbackQuery):
             await query.message.edit_text(
                 f"⚙️ **Bot Settings Menu**\n\n"
                 f"👤 **User:** {query.from_user.mention}\n"
-                f"🔑 **Status:** {login_status}\n"
                 f"📢 **Log Channel:** {current_status}\n\n"
                 f"Niche diye gaye buttons se setup manage karein:",
                 reply_markup=settings_buttons
@@ -539,32 +529,8 @@ async def callback_handler(client, query: CallbackQuery):
              InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ", url="https://t.me/vj_bots")]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
-        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
+        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nKnow how to use bot by - /help</b>"
         try:
             await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
         except MessageNotModified:
             pass
-
-    # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (DIRECT TEXT COMMAND TRIGGER)
-    elif query.data == "btn_login":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = None # Purana state saaf kiya
-        
-        # 🔥 Direct chat me /login command bhej di
-        await client.send_message(
-            chat_id=query.message.chat.id,
-            text="/login"
-        )
-        return
-
-    # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC (DIRECT TEXT COMMAND TRIGGER)
-    elif query.data == "btn_logout":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = None # State saaf kiya
-        
-        # 🔥 Direct chat me /logout command bhej di
-        await client.send_message(
-            chat_id=query.message.chat.id,
-            text="/logout"
-        )
-        return
