@@ -13,13 +13,13 @@ class Database:
     def new_user(self, id):
         return dict(
             id=id,
-            join_date=time.time(), # Fixed join_date
+            join_date=time.time(),
             upload_count=0,
             dump_channel=None,
             session=None,
             api_id=None,
             api_hash=None,
-            last_verified=0 # Token verification field initialized
+            last_verified=0
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -66,9 +66,8 @@ class Database:
     async def set_api_hash(self, id, api_hash):
         await self.col.update_one({'id': int(id)}, {'$set': {'api_hash': api_hash}}, upsert=True)
 
-    # 🔐 TOKEN VERIFICATION SYSTEM FUNCTIONS (ADDED SUCCESSFULLY)
+    # 🔐 TOKEN VERIFICATION TIMEOUT FUNCTION
     async def update_verification(self, user_id):
-        """User ke verification ka current timestamp save karne ke liye"""
         current_time = time.time()
         await self.col.update_one(
             {"id": int(user_id)},
@@ -77,7 +76,6 @@ class Database:
         )
 
     async def is_user_verified(self, user_id, expire_hours):
-        """Check karega ki kya user ka token abhi bhi valid hai"""
         user = await self.col.find_one({"id": int(user_id)})
         if not user:
             return False
@@ -85,11 +83,11 @@ class Database:
         current_time = time.time()
         expire_seconds = expire_hours * 3600
         if (current_time - last_verified) < expire_seconds:
-            return True # Token abhi chalega
-        return False # Token expire ho gaya
+            return True 
+        return False 
 
 
-# Database client instance ka setup
+# Database client instance setup
 db = Database(DB_URI, DB_NAME)
 
 
@@ -110,7 +108,6 @@ async def set_dump_channel(user_id, channel_id):
         upsert=True
     )
 
-# Yeh naya function automatically file ko user ke dump channel me copy kar dega jab bot reply karega
 async def auto_forward_to_dump(client, user_id, message_to_copy):
     dump_id = await get_dump_channel(user_id)
     if dump_id:
@@ -119,31 +116,31 @@ async def auto_forward_to_dump(client, user_id, message_to_copy):
         except Exception as e:
             print(f"Dump forward error: {e}")
 
+
 # -------------------------------------------------------------
-    # 🔐 ONE-TIME USE TOKEN SYSTEM (BY EVAROSE)
-    # -------------------------------------------------------------
+# 🔐 ONE-TIME USE TOKEN SYSTEM GLOBAL FUNCTIONS
+# -------------------------------------------------------------
 
-    async def save_active_token(self, user_id, token_id):
-        """User ke liye ek naya temporary active token save karne ke liye"""
-        await self.col.update_one(
-            {"id": int(user_id)},
-            {"$set": {"active_token": token_id}},
-            upsert=True
-        )
+async def save_active_token(user_id, token_id):
+    """User ke liye ek naya temporary active token save karne ke liye"""
+    await db.col.update_one(
+        {"id": int(user_id)},
+        {"$set": {"active_token": token_id}},
+        upsert=True
+    )
 
-    async def validate_and_consume_token(self, user_id, token_id):
-        """Check karega ki kya token sahi hai, aur sahi hone par use turant delete (consume) kar dega"""
-        user = await self.col.find_one({"id": int(user_id)})
-        if not user:
-            return False
-            
-        active_token = user.get("active_token", None)
-        
-        # Agar token match hota hai, toh use clear kar do taaki dobara use na ho sake
-        if active_token and active_token == token_id:
-            await self.col.update_one(
-                {"id": int(user_id)},
-                {"$set": {"active_token": None}} # Token consumed!
-            )
-            return True
+async def validate_and_consume_token(user_id, token_id):
+    """Check karega ki kya token sahi hai, aur sahi hone par use turant delete kar dega"""
+    user = await db.col.find_one({"id": int(user_id)})
+    if not user:
         return False
+        
+    active_token = user.get("active_token", None)
+    
+    if active_token and active_token == token_id:
+        await db.col.update_one(
+            {"id": int(user_id)},
+            {"$set": {"active_token": None}}  # Token consumed!
+        )
+        return True
+    return False
