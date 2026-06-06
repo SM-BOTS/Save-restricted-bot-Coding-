@@ -200,32 +200,26 @@ async def save(client: Client, message: Message):
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
 
-    # 🔑 FIXED: Phone Number Input State (Instant String Session Redirect)
+    # 🔑 FIXED: Phone Number Input State (Direct Instant OTP Trigger)
     if batch_temp.USER_STATES.get(user_id) == "awaiting_phone_number":
         phone_number = message.text.strip()
         if not phone_number.startswith("+"):
-            await message.reply_text("❌ **Galat Format!** Kripya number ko `+` aur country code ke sath bhejiye.")
+            await message.reply_text("❌ **Galat Format!** Kripya number ko `+` aur country code ke sath bhejiye (Jaise: `+919876543210`).")
             return
             
-        batch_temp.USER_STATES[user_id] = None # State reset
+        batch_temp.USER_STATES[user_id] = None # State clear
         
-        session_buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🚀 Generate Session (Bot 1)", url="https://t.me/vj_string_generation_bot")],
-            [InlineKeyboardButton("🤖 Generate Session (Bot 2)", url="https://t.me/String_Session_Code_Bot")],
-            [InlineKeyboardButton("🔙 Cancel", callback_data="settings")]
-        ])
+        await message.reply_text("🔄 **Processing...** OTP mangwaya ja raha hai, kripya apna Telegram app check karein...")
         
-        await message.reply_text(
-            f"📥 **Number Received:** `{phone_number}`\n\n"
-            f"⚠️ **OTP System Bypass Notice:**\n"
-            f"Direct bot se security restrictions ki wajah se OTP aane me dikkat ho rahi hai. "
-            f"Iska ekdum aasan aur safe tarika ye hai:\n\n"
-            f"1️⃣ Niche diye gaye kisi bhi **Generate Session** button par click karke wahan apna number dalein aur **Instant OTP** mangwayein.\n"
-            f"2️⃣ Wahan se jo **Pyrogram String Session** code milega use copy karein.\n"
-            f"3️⃣ Apne is bot me wapas aakar direct `/login` command ke sath wo code bhej dein.\n\n"
-            f"👉 **Example:** `/login pyrogram_string_session_code_yahan_dalein`",
-            reply_markup=session_buttons
-        )
+        # 🔥 Direct Command Forwarding taaki filters bypass ho aur direct OTP aaye
+        try:
+            await client.send_message(
+                chat_id=message.chat.id, 
+                text=f"/login {phone_number}"
+            )
+        except Exception as e:
+            if ERROR_MESSAGE == True:
+                await message.reply_text(f"❌ Error: {e}")
         return
 
     # --- 🔐 TOKEN VERIFICATION WALL START ---
