@@ -514,7 +514,13 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except: pass
 
-# 🔘 Updates Callback Query Handler (STATE-RESET FIXED BY EVAROSE)
+
+        None)
+            await db.set_api_hash(user_id, None)
+        except:
+            pass
+
+# 🔘 Updates Callback Query Handler (MESSAGE_NOT_MODIFIED ERROR FIXED)
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
     user_id = query.from_user.id
@@ -522,7 +528,6 @@ async def callback_handler(client, query: CallbackQuery):
     # 1️⃣ SETTINGS MENU OPEN KARNA
     if query.data == "settings":
         await query.answer()
-        # 🛠️ FIX: Settings me aate hi agar koi adhoora state ho toh use reset kar do
         batch_temp.USER_STATES[user_id] = None
         
         user_dump = await get_dump_channel(user_id)
@@ -549,105 +554,132 @@ async def callback_handler(client, query: CallbackQuery):
             ]
         ])
         
-        await query.message.edit_text(
-            f"⚙️ **Bot Settings Menu**\n\n"
-            f"👤 **User:** {query.from_user.mention}\n"
-            f"🔑 **Status:** {login_status}\n"
-            f"📢 **Log Channel:** {current_status}\n\n"
-            f"Niche diye gaye buttons se setup manage karein:",
-            reply_markup=settings_buttons
-        )
+        try:
+            await query.message.edit_text(
+                f"⚙️ **Bot Settings Menu**\n\n"
+                f"👤 **User:** {query.from_user.mention}\n"
+                f"🔑 **Status:** {login_status}\n"
+                f"📢 **Log Channel:** {current_status}\n\n"
+                f"Niche diye gaye buttons se setup manage karein:",
+                reply_markup=settings_buttons
+            )
+        except MessageNotModified:
+            pass # Error safe bypass
 
     # 2️⃣ SET CHANNEL BUTTON CLICK LOGIC
     elif query.data == "set_channel":
         await query.answer()
-        # User ka state change karenge taaki bot samajh sake ki agla message channel ID hai
         batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
         
         cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
-        await query.message.edit_text(
-            "📢 **Set Log Channel ID**\n\n"
-            "Kripya apne us channel ki **Numeric ID** bhejiye jahan aap files forward (dump) karna chahte hain.\n\n"
-            "👉 **Example:** `-100123456789`\n\n"
-            "⚠️ **Zaroori:** ID bhejne se pehle bot ko us channel me **Admin** zaroor bana dena!",
-            reply_markup=cancel_button
-        )
+        try:
+            await query.message.edit_text(
+                "📢 **Set Log Channel ID**\n\n"
+                "Kripya apne us channel ki **Numeric ID** bhejiye jahan aap files forward (dump) karna chahte hain.\n\n"
+                "👉 **Example:** `-100123456789`\n\n"
+                "⚠️ **Zaroori:** ID bhejne se pehle bot ko us channel me **Admin** zaroor bana dena!",
+                reply_markup=cancel_button
+            )
+        except MessageNotModified:
+            pass
 
     # 3️⃣ REMOVE CHANNEL BUTTON CLICK LOGIC
     elif query.data == "remove_channel":
         await query.answer()
-        batch_temp.USER_STATES[user_id] = None # Safe reset
+        batch_temp.USER_STATES[user_id] = None 
         await set_dump_channel(user_id, None) 
         
         back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        await query.message.edit_text(
-            "✅ **Success!** Aapka log/dump channel successfully remove kar diya gaya hai.",
-            reply_markup=back_button
-        )
+        try:
+            await query.message.edit_text(
+                "✅ **Success!** Aapka log/dump channel successfully remove kar diya gaya hai.",
+                reply_markup=back_button
+            )
+        except MessageNotModified:
+            pass
 
     # 4️⃣ BACK TO HOME BUTTON CLICK LOGIC
     elif query.data == "back_home":
         await query.answer()
-        # 🛠️ FIX: Home par jate hi state ko None kar do taaki normal chatting ya links kaam karein
         batch_temp.USER_STATES[user_id] = None
         
         buttons = [
             [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
             [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
             [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛê ᴄʜ", url="https://t.me/vj_bots")]
+             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ", url="https://t.me/vj_bots")]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
         welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
-        await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
+        try:
+            await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
+        except MessageNotModified:
+            pass
 
     # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (DIRECT PHONE NUMBER PROCESS)
     elif query.data == "btn_login":
         await query.answer()
-        # Pehle check karenge ki user pehle se logged in toh nahi hai
-        is_logged_in = await db.get_session(user_id)
+        
+        try:
+            is_logged_in = await db.get_session(user_id)
+        except:
+            is_logged_in = None
+
         if is_logged_in:
-            await query.message.edit_text(
-                "⚠️ **Aap pehle se logged in hain!**\n\nAgar aapko naya account jodna hai, toh pehle niche diye gaye button se **Logout** kijiye.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-            )
+            try:
+                await query.message.edit_text(
+                    "⚠️ **Aap pehle se logged in hain!**\n\nAgar aapko naya account jodna hai, toh pehle niche diye gaye button se **Logout** kijiye.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+                )
+            except MessageNotModified:
+                pass
             return
 
-        # User ka state badal kar login process active kar denge
+        # 🔥 CRITICAL FIX: State set karna message edit se pehle hoga taaki har haal me state change ho!
         batch_temp.USER_STATES[user_id] = "awaiting_phone_number"
         
         cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
-        await query.message.edit_text(
-            "🔑 **Telegram Login Process**\n\n"
-            "Kripya apna Telegram **Phone Number** niche format me bhejiye:\n\n"
-            "👉 **Example:** `+919876543210`\n\n"
-            "⚠️ **Zaroori:** Country code (jaise India ke liye `+91`) lagana zaroori hai!",
-            reply_markup=cancel_button
-        )
+        try:
+            await query.message.edit_text(
+                "🔑 **Telegram Login Process**\n\n"
+                "Kripya apna Telegram **Phone Number** neeche format me bhejiye:\n\n"
+                "👉 **Example:** `+919876543210`\n\n"
+                "⚠️ **Zaroori:** Country code (jaise India ke liye `+91`) lagana zaroori hai!",
+                reply_markup=cancel_button
+            )
+        except MessageNotModified:
+            pass
 
     # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC (DIRECT DATABASE SE SESSION CLEAR)
     elif query.data == "btn_logout":
         await query.answer()
-        is_logged_in = await db.get_session(user_id)
+        try:
+            is_logged_in = await db.get_session(user_id)
+        except:
+            is_logged_in = None
         
         if not is_logged_in:
-            await query.message.edit_text(
-                "❌ **Aap logged in nahi hain!**\n\nLogout karne ke liye pehle login hona zaroori hai.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-            )
+            try:
+                await query.message.edit_text(
+                    "❌ **Aap logged in nahi hain!**\n\nLogout karne ke liye pehle login hona zaroori hai.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
+                )
+            except MessageNotModified:
+                pass
             return
             
-        # Database se session aur api details ko clear (None) karna
         await db.rem_session(user_id)
         try:
-            # Agar aapki repo me api_id/api_hash clear karne ke functions hain
             await db.set_api_id(user_id, None)
             await db.set_api_hash(user_id, None)
         except:
             pass
             
         back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        await query.message.edit_text(
-            "✅ **Successfully Logged Out!**\n\nAapka Telegram session is bot se surakshit tarike se hata diya gaya hai.",
-            reply_markup=back_button
-        )
+        try:
+            await query.message.edit_text(
+                "✅ **Successfully Logged Out!**\n\nAapka Telegram session is bot se surakshit tarike se hata diya gaya hai.",
+                reply_markup=back_button
+            )
+        except MessageNotModified:
+            pass
