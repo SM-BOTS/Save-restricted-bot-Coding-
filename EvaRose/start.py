@@ -545,64 +545,26 @@ async def callback_handler(client, query: CallbackQuery):
         except MessageNotModified:
             pass
 
-    # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (BYPASS TO STRING GENERATOR)
+    # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (DIRECT TEXT COMMAND TRIGGER)
     elif query.data == "btn_login":
         await query.answer()
+        batch_temp.USER_STATES[user_id] = None # Purana state saaf kiya
         
-        try: is_logged_in = await db.get_session(user_id)
-        except: is_logged_in = None
+        # 🔥 Direct chat me /login command bhej di
+        await client.send_message(
+            chat_id=query.message.chat.id,
+            text="/login"
+        )
+        return
 
-        if is_logged_in:
-            try:
-                await query.message.edit_text(
-                    "⚠️ **Aap pehle se logged in hain!**\n\nAgar aapko naya account jodna hai, toh pehle niche diye gaye button se **Logout** kijiye.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-                )
-            except MessageNotModified:
-                pass
-            return
-
-        batch_temp.USER_STATES[user_id] = "awaiting_phone_number"
-        
-        cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "🔑 **Telegram Login Process**\n\n"
-                "Kripya apna Telegram **Phone Number** neeche format me bhejiye:\n\n"
-                "👉 **Example:** `+919876543210`\n\n"
-                "⚠️ **Zaroori:** Country code (jaise India ke liye `+91`) lagana zaroori hai!",
-                reply_markup=cancel_button
-            )
-        except MessageNotModified:
-            pass
-
-    # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC
+    # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC (DIRECT TEXT COMMAND TRIGGER)
     elif query.data == "btn_logout":
         await query.answer()
-        try: is_logged_in = await db.get_session(user_id)
-        except: is_logged_in = None
+        batch_temp.USER_STATES[user_id] = None # State saaf kiya
         
-        if not is_logged_in:
-            try:
-                await query.message.edit_text(
-                    "❌ **Aap logged in nahi hain!**\n\nLogout karne ke liye pehle login hona zaroori hai.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-                )
-            except MessageNotModified:
-                pass
-            return
-            
-        await db.rem_session(user_id)
-        try:
-            await db.set_api_id(user_id, None)
-            await db.set_api_hash(user_id, None)
-        except: pass
-            
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "✅ **Successfully Logged Out!**\n\nAapka Telegram session is bot se surakshit tarike se hata diya gaya hai.",
-                reply_markup=back_button
-            )
-        except MessageNotModified:
-            pass
+        # 🔥 Direct chat me /logout command bhej di
+        await client.send_message(
+            chat_id=query.message.chat.id,
+            text="/logout"
+        )
+        return
