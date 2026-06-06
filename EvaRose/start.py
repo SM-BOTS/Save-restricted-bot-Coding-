@@ -3,11 +3,6 @@
 # Ask Doubt on telegram @KingVJ01
 
 import os
-# Don't Remove Credit Tg - @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
-# Ask Doubt on telegram @KingVJ01
-
-import os
 import asyncio
 import pyrogram
 import re
@@ -115,6 +110,17 @@ def progress(current, total, message, type):
     with open(f'{message.id}{type}status.txt', "w") as fileup:
         fileup.write(f"{current * 100 / total:.1f}%")
 
+def get_message_type(msg: Message):
+    if msg.text: return "Text"
+    elif msg.document: return "Document"
+    elif msg.video: return "Video"
+    elif msg.photo: return "Photo"
+    elif msg.audio: return "Audio"
+    elif msg.voice: return "Voice"
+    elif msg.sticker: return "Sticker"
+    elif msg.animation: return "Animation"
+    return None
+
 @Client.on_message(filters.command(["start"]))
 async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
@@ -155,7 +161,7 @@ async def send_start(client: Client, message: Message):
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
         [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
+         InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛ𝒆 ᴄʜ2024_ᴄʜ2024", url="https://t.me/vj_bots")]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
     welcome_text = f"<b>👋 Hi {message.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
@@ -194,26 +200,32 @@ async def save(client: Client, message: Message):
             await message.reply_text("❌ **Galat Format!** Kripya sirf numeric ID bhejiye (Jaise: -100123456789).")
         return
 
-    # 🔑 FIXED: Phone Number Input State Handle (Direct OTP Trigger with Correct Spacing)
+    # 🔑 FIXED: Phone Number Input State (Instant String Session Redirect)
     if batch_temp.USER_STATES.get(user_id) == "awaiting_phone_number":
         phone_number = message.text.strip()
         if not phone_number.startswith("+"):
-            await message.reply_text("❌ **Galat Format!** Kripya number ko `+` aur country code ke sath bhejiye (Jaise: `+919876543210`).")
+            await message.reply_text("❌ **Galat Format!** Kripya number ko `+` aur country code ke sath bhejiye.")
             return
             
         batch_temp.USER_STATES[user_id] = None # State reset
         
-        # 🔄 Text badal kar automatic /login command trigger karna
-        message.text = f"/login {phone_number}"
+        session_buttons = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🚀 Generate Session (Bot 1)", url="https://t.me/vj_string_generation_bot")],
+            [InlineKeyboardButton("🤖 Generate Session (Bot 2)", url="https://t.me/String_Session_Code_Bot")],
+            [InlineKeyboardButton("🔙 Cancel", callback_data="settings")]
+        ])
         
-        # ⚡ Pom Pom repo ke original login handler ko call karna taaki OTP aa jaye
-        try:
-            from plugins.login import login_handler
-            await login_handler(client, message)
-        except Exception as e:
-            # Agar direct import kaam na kare, toh system ko command send karne do
-            await message.reply_text("🔄 **Processing...** OTP mangwaya ja raha hai, kripya 10-15 seconds rukhein...")
-            await client.send_message(chat_id=message.chat.id, text=f"/login {phone_number}")
+        await message.reply_text(
+            f"📥 **Number Received:** `{phone_number}`\n\n"
+            f"⚠️ **OTP System Bypass Notice:**\n"
+            f"Direct bot se security restrictions ki wajah se OTP aane me dikkat ho rahi hai. "
+            f"Iska ekdum aasan aur safe tarika ye hai:\n\n"
+            f"1️⃣ Niche diye gaye kisi bhi **Generate Session** button par click karke wahan apna number dalein aur **Instant OTP** mangwayein.\n"
+            f"2️⃣ Wahan se jo **Pyrogram String Session** code milega use copy karein.\n"
+            f"3️⃣ Apne is bot me wapas aakar direct `/login` command ke sath wo code bhej dein.\n\n"
+            f"👉 **Example:** `/login pyrogram_string_session_code_yahan_dalein`",
+            reply_markup=session_buttons
+        )
         return
 
     # --- 🔐 TOKEN VERIFICATION WALL START ---
@@ -333,6 +345,7 @@ async def save(client: Client, message: Message):
                 asyncio.ensure_future(start_auto_delete(client, message.chat.id, notif_msg.id, AUTO_DELETE_TIME))
             except Exception as e:
                 print(f"Notification error: {e}")
+
 async def handle_private(client: Client, acc, message: Message, chatid, msgid: int):
     msg: Message = await acc.get_messages(chatid, msgid)
     if msg.empty:
@@ -392,282 +405,4 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     uploaded_msg = None
     if "Document" == msg_type:
         try:
-            ph_path = await acc.download_media(msg.document.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-            
-    elif "Video" == msg_type:
-        try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
-        except: ph_path = None
-        try:
-            uploaded_msg = await client.send_video(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-            
-    elif "Animation" == msg_type:
-        try:
-            uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-                
-    elif "Sticker" == msg_type:
-        try:
-            uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
-                
-    elif "Voice" == msg_type:
-        try:
-            uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-                
-    elif "Audio" == msg_type:
-        try:
-            ph_path = await acc.download_media(msg.audio.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        if ph_path != None:
-            os.remove(ph_path)
-            
-    elif "Photo" == msg_type:
-        try:
-            uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-        except Exception as e:
-            if ERROR_MESSAGE == True:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-
-# ⏱️ Active sent message tracker for auto-deletion
-    if uploaded_msg:
-        batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
-        asyncio.ensure_future(start_auto_delete(client, chat, uploaded_msg.id, AUTO_DELETE_TIME))
-
-    if uploaded_msg and user_dump:
-        try:
-            await uploaded_msg.copy(chat_id=int(user_dump))
-        except Exception as e:
-            print(f"Dump forward error: {e}")
-    if os.path.exists(f'{message.id}upstatus.txt'):
-        os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(file):
-        os.remove(file)
-    try:
-        await client.delete_messages(message.chat.id, [smsg.id])
-    except:
-        pass
-
-def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
-    try:
-        msg.document.file_id
-        return "Document"
-    except: pass
-    try:
-        msg.video.file_id
-        return "Video"
-    except: pass
-    try:
-        msg.animation.file_id
-        return "Animation"
-    except: pass
-    try:
-        msg.sticker.file_id
-        return "Sticker"
-    except: pass
-    try:
-        msg.voice.file_id
-        return "Voice"
-    except: pass
-    try:
-        msg.audio.file_id
-        return "Audio"
-    except: pass
-    try:
-        msg.photo.file_id
-        return "Photo"
-    except: pass
-    try:
-        msg.text
-        return "Text"
-    except: pass
-
-# 🔘 Updates Callback Query Handler (MESSAGE_NOT_MODIFIED ERROR FIXED)
-@Client.on_callback_query()
-async def callback_handler(client, query: CallbackQuery):
-    user_id = query.from_user.id
-
-    # 1️⃣ SETTINGS MENU OPEN KARNA
-    if query.data == "settings":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = None
-        
-        user_dump = await get_dump_channel(user_id)
-        current_status = f"`{user_dump}`" if user_dump else "Not Set"
-        
-        try:
-            is_logged_in = await db.get_session(user_id)
-        except:
-            is_logged_in = None
-            
-        login_status = "🔑 Logged In" if is_logged_in else "🔒 Not Logged In"
-        
-        settings_buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🔑 Login", callback_data="btn_login"),
-                InlineKeyboardButton("🚪 Logout", callback_data="btn_logout")
-            ],
-            [
-                InlineKeyboardButton("➕ Set Channel", callback_data="set_channel"),
-                InlineKeyboardButton("❌ Remove Channel", callback_data="remove_channel")
-            ],
-            [
-                InlineKeyboardButton("⬅️ Back to Home", callback_data="back_home")
-            ]
-        ])
-        
-        try:
-            await query.message.edit_text(
-                f"⚙️ **Bot Settings Menu**\n\n"
-                f"👤 **User:** {query.from_user.mention}\n"
-                f"🔑 **Status:** {login_status}\n"
-                f"📢 **Log Channel:** {current_status}\n\n"
-                f"Niche diye gaye buttons se setup manage karein:",
-                reply_markup=settings_buttons
-            )
-        except MessageNotModified:
-            pass # Error safe bypass
-
-    # 2️⃣ SET CHANNEL BUTTON CLICK LOGIC
-    elif query.data == "set_channel":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = "awaiting_channel_id"
-        
-        cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "📢 **Set Log Channel ID**\n\n"
-                "Kripya apne us channel ki **Numeric ID** bhejiye jahan aap files forward (dump) karna chahte hain.\n\n"
-                "👉 **Example:** `-100123456789`\n\n"
-                "⚠️ **Zaroori:** ID bhejne se pehle bot ko us channel me **Admin** zaroor bana dena!",
-                reply_markup=cancel_button
-            )
-        except MessageNotModified:
-            pass
-
-    # 3️⃣ REMOVE CHANNEL BUTTON CLICK LOGIC
-    elif query.data == "remove_channel":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = None 
-        await set_dump_channel(user_id, None) 
-        
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "✅ **Success!** Aapka log/dump channel successfully remove kar diya gaya hai.",
-                reply_markup=back_button
-            )
-        except MessageNotModified:
-            pass
-
-    # 4️⃣ BACK TO HOME BUTTON CLICK LOGIC
-    elif query.data == "back_home":
-        await query.answer()
-        batch_temp.USER_STATES[user_id] = None
-        
-        buttons = [
-            [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
-            [InlineKeyboardButton("❣️ Developer", url="https://t.me/kingvj01")],
-            [InlineKeyboardButton("🔍 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url="https://t.me/vj_bot_disscussion"),
-             InlineKeyboardButton("🤖 ᴜᴘᴅᴀᴛᴇ ᴄʜ", url="https://t.me/vj_bots")]
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        welcome_text = f"<b>👋 Hi {query.from_user.mention}, I am Save Restricted Content Bot, I can send you restricted content by its post link.\n\nFor downloading restricted content /login first.\n\nKnow how to use bot by - /help</b>"
-        try:
-            await query.message.edit_text(welcome_text, reply_markup=reply_markup, parse_mode=enums.ParseMode.HTML)
-        except MessageNotModified:
-            pass
-
-    # 5️⃣ 🔑 LOGIN BUTTON CLICK LOGIC (DIRECT PHONE NUMBER PROCESS)
-    elif query.data == "btn_login":
-        await query.answer()
-        
-        try:
-            is_logged_in = await db.get_session(user_id)
-        except:
-            is_logged_in = None
-
-        if is_logged_in:
-            try:
-                await query.message.edit_text(
-                    "⚠️ **Aap pehle se logged in hain!**\n\nAgar aapko naya account jodna hai, toh pehle niche diye gaye button se **Logout** kijiye.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-                )
-            except MessageNotModified:
-                pass
-            return
-
-        # 🔥 CRITICAL FIX: State set karna message edit se pehle hoga taaki har haal me state change ho!
-        batch_temp.USER_STATES[user_id] = "awaiting_phone_number"
-        
-        cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "🔑 **Telegram Login Process**\n\n"
-                "Kripya apna Telegram **Phone Number** neeche format me bhejiye:\n\n"
-                "👉 **Example:** `+919876543210`\n\n"
-                "⚠️ **Zaroori:** Country code (jaise India ke liye `+91`) lagana zaroori hai!",
-                reply_markup=cancel_button
-            )
-        except MessageNotModified:
-            pass
-
-    # 6️⃣ 🚪 LOGOUT BUTTON CLICK LOGIC (DIRECT DATABASE SE SESSION CLEAR)
-    elif query.data == "btn_logout":
-        await query.answer()
-        try:
-            is_logged_in = await db.get_session(user_id)
-        except:
-            is_logged_in = None
-        
-        if not is_logged_in:
-            try:
-                await query.message.edit_text(
-                    "❌ **Aap logged in nahi hain!**\n\nLogout karne ke liye pehle login hona zaroori hai.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-                )
-            except MessageNotModified:
-                pass
-            return
-            
-        await db.rem_session(user_id)
-        try:
-            await db.set_api_id(user_id, None)
-            await db.set_api_hash(user_id, None)
-        except:
-            pass
-            
-        back_button = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back to Settings", callback_data="settings")]])
-        try:
-            await query.message.edit_text(
-                "✅ **Successfully Logged Out!**\n\nAapka Telegram session is bot se surakshit tarike se hata diya gaya hai.",
-                reply_markup=back_button
-            )
-        except MessageNotModified:
-            pass
+            ph_path = await acc.download_media(
