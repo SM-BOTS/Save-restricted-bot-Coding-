@@ -404,12 +404,10 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             os.remove(ph_path)
             
     elif "Video" == msg_type:
+        try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
+        except: ph_path = None
         try:
-            ph_path = await acc.download_media(msg.video.thumbs[0].file_id)
-        except:
-            ph_path = None
-        try:
-            uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+            uploaded_msg = await client.send_video(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         except Exception as e:
             if ERROR_MESSAGE == True:
                 await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
