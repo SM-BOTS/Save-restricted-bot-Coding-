@@ -509,7 +509,7 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
     except: pass
 
 
-        try:
+    try:
             await db.set_api_hash(user_id, None)
         except:
             pass
