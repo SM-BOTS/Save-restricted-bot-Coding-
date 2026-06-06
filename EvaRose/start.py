@@ -120,22 +120,35 @@ async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
     
-    # 🔐 TOKEN VERIFICATION CHECK (Bypass se wapas aane par token catch karna)
+    # 🔐 ONE-TIME TOKEN VERIFICATION CHECK (Bypass se wapas aane par)
     if len(message.text.split()) > 1:
         param = message.text.split()[1]
         if param.startswith("verify_"):
-            verified_user_id = param.split("_")[1]
-            if str(verified_user_id) == str(message.from_user.id):
-                # Database me status update kar dena
-                await db.update_verification(message.from_user.id)
-                await message.reply_text(
-                    f"✅ **Verification Successful!**\n\n"
-                    f"Aapka token successfully activate ho gaya hai. "
-                    f"Ab aap agle **{VERIFY_EXPIRE_HOURS} hours** tak bot ko bina kisi ad ke use kar sakte hain! 🎉"
-                )
-                return
-            else:
-                await message.reply_text("❌ Galat verification link!")
+            try:
+                parts = param.split("_")
+                verified_user_id = parts[1]
+                token_id = parts[2]
+                
+                if str(verified_user_id) == str(message.from_user.id):
+                    # Direct function call bina db. ke
+                    is_token_valid = await validate_and_consume_token(message.from_user.id, token_id)
+                    
+                    if is_token_valid:
+                        await db.update_verification(message.from_user.id)
+                        await message.reply_text(
+                            f"✅ **Verification Successful!**\n\n"
+                            f"Aapka token successfully activate ho gaya hai. "
+                            f"Ab aap agle **{VERIFY_EXPIRE_HOURS} hours** tak bot ko bina kisi ad ke use kar sakte hain! 🎉"
+                        )
+                        return
+                    else:
+                        await message.reply_text("❌ **This link has expired!**\n\nYeh verification link ek baar use ho chuka hai ya purana ho gaya hai. Kripya bot me naya link generate karein.")
+                        return
+                else:
+                    await message.reply_text("❌ Galat verification link!")
+                    return
+            except Exception as e:
+                await message.reply_text("❌ Verification parameter corrupt hai!")
                 return
 
     buttons = [
