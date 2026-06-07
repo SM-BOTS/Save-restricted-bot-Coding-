@@ -17,39 +17,39 @@ else:
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 # Your API ID from my.telegram.org
-API_ID = int(os.environ.get("API_ID", "33361737"))
+API_ID = int(os.environ.get("API_ID", ""))
 
 # Your API Hash from my.telegram.org
-API_HASH = os.environ.get("API_HASH", "7cd3bda26b08957a7205bbe8a51e6e90")
+API_HASH = os.environ.get("API_HASH", "")
 
 # Your Owner / Admin Id For Broadcast 
-ADMINS = int(os.environ.get("ADMINS", "8391386178"))
+ADMINS = int(os.environ.get("ADMINS", ""))
 FORCE_CLEAN_CAPTION = True
 # --- Welcome Image Settings ---
 START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh False kar do
-START_IMAGE_URL = "https://i.ibb.co/HLhnypGg/photo-2026-05-27-17-49-35-7644630238818730000.jpg"  # Apni image ka direct link
+START_IMAGE_URL = ""  # Apni image ka direct link
 # --- Auto Delete Settings ---
 # Time seconds me hona chahiye (Udaharan: 300 seconds = 5 minutes)
 AUTO_DELETE_TIME = 300
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
-CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003703565044")
+CHANNEL_ID = os.environ.get("CHANNEL_ID", "")
 
 # --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
 VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
-BOT_USERNAME = os.environ.get("BOT_USERNAME", "Cksjsjsjsibot")
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
 
 # 🌐 Website ka domain (Example: vplink.co, gplinks.in)
-SHORTENER_URL = os.environ.get("SHORTENER_URL", "vplink.in")
+SHORTENER_URL = os.environ.get("SHORTENER_URL", "")
 
 # 🔑 Shortener website se mili hui aapki Secret API Key
-SHORTENER_API = os.environ.get("SHORTENER_API", "643cf7208bfdc009d2e1f953905840a9619d48ca")
+SHORTENER_API = os.environ.get("SHORTENER_API", "")
 
 # Your Mongodb Database Url
 # Warning - Give Db uri in deploy server environment variable, don't give in repo.
-DB_URI = os.environ.get("DB_URI", "mongodb+srv://gxmon239:f4l7bKrhka3Fh2cV@cluster0.qmblwql.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # Warning - Give Db uri in deploy server environment variable, don't give in repo.
-DB_NAME = os.environ.get("DB_NAME", "vjsavecontentbot")
+DB_URI = os.environ.get("DB_URI", "") # Warning - Give Db uri in deploy server environment variable, don't give in repo.
+DB_NAME = os.environ.get("DB_NAME", "")
 
 # Increase time as much as possible to avoid floodwait, spamming and tg account ban issues.
 WAITING_TIME = int(os.environ.get("WAITING_TIME", "10")) # time in seconds
