@@ -20,28 +20,34 @@ class batch_temp(object):
     CUSTOM_CAPTIONS = {}
 
 # Caption cleaner utility function
+# Caption cleaner utility function (Perfect Overwrite & Fallback Version)
 async def clean_bad_caption(user_id, caption_text):
+    # 1. Pehle check karo kya user ne database/dict me koi custom caption set kiya hai
+    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
+    
+    # 🌟 CASE 1: Agar custom caption mil gaya, toh original text ko poora duba do, sirf custom bhejo
+    if custom_cap:
+        return custom_cap
+
+    # 🌟 CASE 2: Agar custom caption nahi hai, toh original file ka caption hi jayega
     if caption_text:
+        # Original caption se sirf faltu copyright/delete wali ads saaf karo
         pattern = r"⏱️\s*\*?\s*Note:\s*\*?\s*Yeh\s*file\s*copyright\s*strikes\s*se\s*bachne\s*ke\s*liye\s*\(?5\s*minutes\)?\s*me\s*automatically\s*delete\s*ho\s*jayegi!?"
         cleaned = re.sub(pattern, "", caption_text, flags=re.IGNORECASE).strip()
+        
         bad_strings = [
             "⏱️ **Note:** Yeh file copyright strikes se bachne ke liye **5 minutes** me automatically delete ho jayegi!",
             "⏱️ Note: Yeh file copyright strikes se bachne ke liye 5 minutes me automatically delete ho jayegi!"
         ]
         for bad_str in bad_strings:
             cleaned = cleaned.replace(bad_str, "")
+            
         cleaned = cleaned.strip()
-    else:
-        cleaned = ""
-
-    custom_cap = batch_temp.CUSTOM_CAPTIONS.get(user_id)
-    if custom_cap:
-        if cleaned:
-            return f"{cleaned}\n\n{custom_cap}"
-        else:
-            return custom_cap
-    return cleaned if cleaned else None
-
+        return cleaned if cleaned else None
+        
+    # Agar na custom caption ho aur na file me koi text ho
+    return None
+	
 async def downstatus(client, statusfile, message, chat):
     while True:
         if os.path.exists(statusfile):
