@@ -19,7 +19,8 @@ class Database:
             session=None,
             api_id=None,
             api_hash=None,
-            last_verified=0
+            last_verified=0,
+            thumbnail=None  # Added for safe dynamic fallback
         )
         
     async def add_user(self, id, *args, **kwargs):
@@ -86,6 +87,17 @@ class Database:
             return True 
         return False 
 
+    # 🖼️ DATABASE-BACKED THUMBNAIL LOGIC ADDED BY GEMINI
+    async def get_thumbnail(self, id):
+        user = await self.col.find_one({'id': int(id)})
+        return user.get("thumbnail") if user else None
+
+    async def set_thumbnail(self, id, thumbnail):
+        await self.col.update_one({'id': int(id)}, {'$set': {'thumbnail': thumbnail}}, upsert=True)
+
+    async def rem_thumbnail(self, id):
+        await self.col.update_one({'id': int(id)}, {'$set': {'thumbnail': None}}, upsert=True)
+
 
 # Database client instance setup
 db = Database(DB_URI, DB_NAME)
@@ -122,7 +134,6 @@ async def auto_forward_to_dump(client, user_id, message_to_copy):
 # -------------------------------------------------------------
 
 async def save_active_token(user_id, token_id):
-    """User ke liye ek naya temporary active token save karne ke liye"""
     await db.col.update_one(
         {"id": int(user_id)},
         {"$set": {"active_token": token_id}},
@@ -130,7 +141,6 @@ async def save_active_token(user_id, token_id):
     )
 
 async def validate_and_consume_token(user_id, token_id):
-    """Check karega ki kya token sahi hai, aur sahi hone par use turant delete kar dega"""
     user = await db.col.find_one({"id": int(user_id)})
     if not user:
         return False
@@ -140,7 +150,7 @@ async def validate_and_consume_token(user_id, token_id):
     if active_token and active_token == token_id:
         await db.col.update_one(
             {"id": int(user_id)},
-            {"$set": {"active_token": None}}  # Token consumed!
+            {"$set": {"active_token": None}}
         )
         return True
     return False
