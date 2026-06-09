@@ -15,12 +15,21 @@ except ImportError:
 
 try:
     import pyromod
+    # 🌟 PYROMOD LISTENER DICTIONARY CRASH PATCH
+    from pyromod.listen.listener_types import ListenerTypes
+    if not hasattr(Client, 'listeners'):
+        Client.listeners = {ListenerTypes.MESSAGE: {}}
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyromod"])
+    import pyromod
+    from pyromod.listen.listener_types import ListenerTypes
+    if not hasattr(Client, 'listeners'):
+        Client.listeners = {ListenerTypes.MESSAGE: {}}
 
 import asyncio
 import pyrogram
 import re
+# ... (Baaki poora code niche ka bilkul waisa ka waisa hi rahega)
 import uuid
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
