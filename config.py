@@ -34,13 +34,13 @@ AUTO_DELETE_TIME = 300
 # Your Channel Id In Which Bot Upload Downloaded Video/File/Message etc.
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
-CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003985895823")
+CHANNEL_ID = os.environ.get("CHANNEL_ID", "")
 
 # Isme apne log channel ki ID daal dena (jaise -100xxxxxxxxx)
-LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002233445566"))
+LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1004214402860"))
 
 # --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
-VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
+VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 24)) 
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "Heysgetwrebot")
 
 # 🌐 Website ka domain (Example: vplink.co, gplinks.in)
