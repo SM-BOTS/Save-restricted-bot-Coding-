@@ -1,5 +1,13 @@
 # 🤖 SAVE RESTRICTED CONTENT TELEGRAM BOT
 
+### 👑 CREDITS & OWNERSHIP:
+* **Core Developer & Framework Architect:** [@kingvj01](https://t.me/kingvj01) ❣️
+* **Original Repository Base:** [@EvaRoseX](https://t.me/EvaRoseX) 🌹
+* **Official Automated Updates:** [@vj_bots](https://t.me/vj_bots) 🤖
+* **Support Group:** [@vj_bot_disscussion](https://t.me/vj_bot_disscussion) 🔍
+
+---
+
 A powerful, optimized, and multi-functional Telegram Bot built using **Python** and the **Pyrogram** library. This bot allows users to download and save restricted content (photos, videos, documents, audios, and text) from private or public channels/groups effortlessly.
 
 ---
