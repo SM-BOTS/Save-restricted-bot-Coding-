@@ -1,85 +1,52 @@
+# 🤖 SAVE RESTRICTED CONTENT TELEGRAM BOT
 
-<p align="center">
-  <img src="https://i.ibb.co/dJ0gpJf1/photo-2025-06-16-12-07-05-7516517596376596504.jpg" alt="VJ Save Restricted Bot Logo">
-</p>
-<h1 align="center">
-  VJ Save Restricted Bot
-</h1>
-
-
-*A Telegram Bot, Which Can Send You Restricted Content By It's Post Link With <b>Login Feature.</b>*
-
-*Added **TG Account Protection** Security To Prevent Account From Ban Issue, Not Totally But Now TG Account Ban Chance Is Low.*
+A powerful, optimized, and multi-functional Telegram Bot built using **Python** and the **Pyrogram** library. This bot allows users to download and save restricted content (photos, videos, documents, audios, and text) from private or public channels/groups effortlessly.
 
 ---
 
-<b>Watch Video Tutorial - [Click Here](https://youtu.be/BFEvSX5vIMg)</b>
+## 🌟 KEY FEATURES
+
+* **Restricted Content Bypass:** Seamlessly download files from channels with saving/forwarding restrictions.
+* **Clean Interactive UI:** Fixed, clutter-free standard normal text buttons for advanced user configurations.
+* **Advanced Settings Panel:**
+    * 🔑 **Session Management:** Securely link or log out account sessions.
+    * 📢 **Dump Channel:** Automatically back up all downloaded files to a custom private channel.
+    * ✍️ **Custom Branding Caption:** Apply a personalized caption to downloaded text or files.
+    * 🖼️ **Custom Thumbnail:** Lock a global permanent thumbnail for document and video uploads.
+* **Auto-Deletion System:** Automatically purges batch downloaded files after 5 minutes to prevent copyright flags.
+* **Token Verification Lock:** Optional URL shortener integration to protect the bot with a 12-hour verification bypass loop.
+* **Real-time Activity Logs:** Sends instant detailed notifications to a private `LOG_CHANNEL` when new users join.
 
 ---
 
-## Variables
+## 🛠️ ENVIRONMENT VARIABLES & CONFIGURATION
 
-- `LOGIN_SYSTEM` : Set True or False As per your need.
-- `STRING_SESSION` : Your Tg Account Session String, if login is False then this variable is compulsory to fill. ( ⚠️ Warning - Give string session on deploy website environment variable, don't give in repo )
-- `API_HASH` : Your API Hash From [Telegram Website](https://my.telegram.org) Watch [Video Tutorial](https://youtu.be/LDtgwpI-N7M)
-- `API_ID` : Your API ID From [Telegram Website](https://my.telegram.org) Watch [Video Tutorial](https://youtu.be/LDtgwpI-N7M)
-- `BOT_TOKEN` : Your Bot Token From [BotFather](https://telegram.me/BotFather) ( ⚠️ Warning - Give Bot Token on deploy website environment variable, don't give in repo )
-- `ADMINS` : Your Admin Id For Broadcasting Message
-- `CHANNEL_ID` : Your Channel Id On Which Bot Upload Downloaded Content. ( And Make Your Bot Admin In This Channel With Full Rights )
-- `DB_URI` : Your Mongodb Database Url From [Mongodb](https://mongodb.com) Watch [Video Tutorial](https://youtu.be/DAHRmFdw99o) ( ⚠️ Warning - Give Db Url on deploy website environment variable, don't give in repo )
-- `WAITING_TIME` : Increase Time To Avoid Spamming, Floodwait and Tg Account Ban Issue.
-- `ERROR_MESSAGE` : Set True Or False, If You Want Error Message Then True Else False.
+Configure the following variables in your `config.py` or system environment dashboard:
 
----
-
-## Commands
-
-- `/start` : Check Bot Is Working Or Not
-- `/help` : Check How To Use Bot
-- `/login` : Login Your Telegram String Session 
-- `/logout` : Logout Your Session 
-- `/cancel` : Cancel Your Any Ongoing Task
-- `/broadcast` : Broadcast Message To User (Admin Only)
+| Variable Name | Description | Required |
+| :--- | :--- | :--- |
+| `API_ID` | Your Telegram API ID from my.telegram.org. | **Yes** |
+| `API_HASH` | Your Telegram API Hash from my.telegram.org. | **Yes** |
+| `BOT_TOKEN` | The bot token generated via BotFather. | **Yes** |
+| `STRING_SESSION` | Pre-configured Pyrogram String Session for account bypass. | No |
+| `LOG_CHANNEL` | ID of the private log channel for active tracking. | **Yes** |
+| `START_PIC` | Direct Telegram link of the start menu welcome image. | **Yes** |
+| `LOGIN_SYSTEM` | Enable or disable custom user session authentication (`True`/`False`). | **Yes** |
+| `SHORTENER_URL` | Domain API shortener endpoint for verification token. | No |
+| `SHORTENER_API` | Token key for shortener tracking link bypass. | No |
 
 ---
 
-## Usage
+## 🚀 DEPLOYMENT GUIDE
 
-__FOR PUBLIC CHATS__
+### 1. Local Setup
+```bash
+# Clone the repository
+git clone [https://github.com/yourusername/your-repo-name.git](https://github.com/yourusername/your-repo-name.git)
+cd your-repo-name
 
-_just send post/s link_
+# Install dependencies
+pip install -r requirements.txt
 
-
-__FOR PRIVATE CHATS__
-
-_first send invite link of the chat (unnecessary if the account of string session already member of the chat)
-then send post/s link_
-
-
-__FOR BOT CHATS__
-
-_send link with '/b/', bot's username and message id, you might want to install some unofficial client (like - Plus Messenger) to get the id like below_
-
-```
-https://t.me/b/botusername/4321
-```
-
-__MULTI POSTS__
-
-_send public/private posts link as explained above with formate "from - to" to send multiple messages like below_
-
-
-```
-https://t.me/xxxx/1001-1010
-
-https://t.me/c/xxxx/101 - 120
-```
-
-_note that space in between doesn't matter_
-
----
-
-## Credits
-
-- <b>Thanks To [BipinKrish](https://github.com/bipinkrish) For Base Repo
-- Thanks To [Tech VJ](https://github.com/VJBots) For Modification.</b>
+# Run the application
+python3 bot.py
