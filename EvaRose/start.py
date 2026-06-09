@@ -124,9 +124,9 @@ async def send_start(client: Client, message: Message):
 
     # PREMIUM STYLIZED START BUTTONS WITH EVAROSE IDENTITY
     buttons = [
-        [InlineKeyboardButton("❣️ 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/kingvj01")],
-        [InlineKeyboardButton("🔍 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐑𝐎𝐔𝐏", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 𝐔block 𝐂𝐇block𝐄𝐋", url="https://t.me/vj_bots")],
-        [InlineKeyboardButton("⚙️ 𝐁class𝐎𝐓 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒", callback_data="settings_cmd")]
+        [InlineKeyboardButton("❣️ 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/EvaRoseX")],
+        [InlineKeyboardButton("🔍 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐑𝐎𝐔𝐏", url="https://t.me/ERSupportGroup"), InlineKeyboardButton("🤖 𝐔𝐏𝐃𝐀𝐓𝐄 𝐂𝐇𝐀𝐍𝐍𝐄𝐋", url="https://t.me/ERBotsUpdate")],
+        [InlineKeyboardButton("⚙️ 𝐁𝐎𝐓 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒", callback_data="settings_cmd")]
     ]
     await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>", reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
 
