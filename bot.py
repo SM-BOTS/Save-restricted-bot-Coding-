@@ -2,18 +2,18 @@
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
 # Ask Doubt on telegram @KingVJ01
 
+# 🚀 IMPORT PYROMOD BEFORE CLIENT TO INJECT MODS
+import pyromod
 from pyrogram import Client
 from config import API_ID, API_HASH, BOT_TOKEN, STRING_SESSION, LOGIN_SYSTEM
 
-# 🚀 MANUALLY INITIALIZE PYROMOD TO OVERRIDE THE KEYERROR GLITCH
-try:
-    import pyromod
-    from pyromod.listen.listener_types import ListenerTypes
-    # Forcing standard dictionary allocation on Pyrogram Client before startup
-    if not hasattr(Client, 'listeners'):
-        Client.listeners = {ListenerTypes.MESSAGE: {}, 'message': {}}
-except Exception as e:
-    print(f"Pyromod patch log: {e}")
+# --- Initial Patch For Pyromod V3 KeyError ---
+if not hasattr(Client, 'listeners'):
+    Client.listeners = {}
+
+# Direct string registration to bypass missing enum modules
+Client.listeners['message'] = {}
+Client.listeners['MESSAGE'] = {}
 
 if STRING_SESSION is not None and LOGIN_SYSTEM == False:
     TechVJUser = Client("EvaRose", api_id=API_ID, api_hash=API_HASH, session_string=STRING_SESSION)
@@ -34,11 +34,16 @@ class Bot(Client):
             sleep_threshold=5
         )
 
+    async_to_sync_wrap = None # Safe reset for sync handler wrappers
+
     async def start(self):
         await super().start()
-        # Ensure runtime patch matches target structures
+        # Force double check during instance initialization
         if not hasattr(self, 'listeners') or not self.listeners:
-            self.listeners = {ListenerTypes.MESSAGE: {}, 'message': {}}
+            self.listeners = {}
+        if 'message' not in self.listeners:
+            self.listeners['message'] = {}
+            
         print('Bot Started Powered By @EvaRoseX')
 
     async def stop(self, *args):
