@@ -1,6 +1,9 @@
-# Don't Remove Credit Tg - @EvaRoseX
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@EvaRoseX
-# Ask Doubt on telegram @EvaRoseX_Support
+## DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
 
 import os
 import asyncio
@@ -88,6 +91,13 @@ async def upstatus(client, statusfile, message, chat):
 def progress(current, total, message, type):
     with open(f'{message.id}{type}status.txt', "w") as fileup:
         fileup.write(f"{current * 100 / total:.1f}%")
+
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
 
 @Client.on_message(filters.command(["start"]))
 async def send_start(client: Client, message: Message):
@@ -366,6 +376,13 @@ async def auto_delete_batch(client, chat_id, message_ids, delay=300):
     try: await client.delete_messages(chat_id, message_ids)
     except Exception as e: print(f"Batch Auto-delete error: {e}")
 
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
+
 # ----------------------------------------------------
 # SETTINGS ACTIONS INTERACTION GRID (STYLIZED FONT)
 # ----------------------------------------------------
@@ -542,6 +559,8 @@ async def back_to_main_start_callback(client, callback_query):
         reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-# Don't Remove Credit Tg - @EvaRoseX
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@EvaRoseX
-# Ask Doubt on telegram @EvaRoseX_Support
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
