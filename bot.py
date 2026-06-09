@@ -1,6 +1,8 @@
-# Don't Remove Credit Tg - @EvaRoseX
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@EvaRoseX
-# Ask Doubt on telegram @EvaRoseX_Support
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
 
 from pyrogram import Client
 from config import API_ID, API_HASH, BOT_TOKEN, STRING_SESSION, LOGIN_SYSTEM
@@ -36,6 +38,8 @@ if __name__ == "__main__":
     bot = Bot()
     bot.run()
 
-# Don't Remove Credit Tg - @EvaRoseX
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@EvaRoseX
-# Ask Doubt on telegram @EvaRoseX_Support
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
