@@ -1,6 +1,9 @@
-# Don't Remove Credit @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
 
 FROM python:3.10.8-slim-buster
 WORKDIR /app
