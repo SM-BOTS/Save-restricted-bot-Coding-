@@ -27,7 +27,7 @@ ADMINS = int(os.environ.get("ADMINS", "8391386178"))
 FORCE_CLEAN_CAPTION = True
 # --- Welcome Image Settings ---
 START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh False kar do
-START_IMAGE_URL = "https://i.ibb.co/gYFD469/photo-2026-05-28-08-13-57-7644852993002569744.jpg"  # Apni image ka direct link
+START_IMAGE_URL = "https://i.ibb.co/LzSg5v39/photo-2026-06-09-15-56-22-7649425174667722768.jpg"  # Apni image ka direct link
 # --- Auto Delete Settings ---
 # Time seconds me hona chahiye (Udaharan: 300 seconds = 5 minutes)
 AUTO_DELETE_TIME = 300
@@ -35,6 +35,9 @@ AUTO_DELETE_TIME = 300
 # And Make Your Bot Admin In this channel with full rights.
 # if you don't want to upload in channel then leave it blank don't fill anything.
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "-1003985895823")
+
+# Isme apne log channel ki ID daal dena (jaise -100xxxxxxxxx)
+LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002233445566"))
 
 # --- MULTI-SHORTENER CONFIGURATION (ALAG-ALAG) ---
 VERIFY_EXPIRE_HOURS = int(os.environ.get("VERIFY_EXPIRE_HOURS", 12)) 
