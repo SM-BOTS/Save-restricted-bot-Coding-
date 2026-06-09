@@ -10,7 +10,7 @@ import uuid
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
-from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, BOT_USERNAME, SHORTENER_URL, SHORTENER_API, VERIFY_EXPIRE_HOURS, LOG_CHANNEL, START_PIC
+from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, BOT_USERNAME, SHORTENER_URL, SHORTENER_API, VERIFY_EXPIRE_HOURS, LOG_CHANNEL
 from database.db import db, get_dump_channel, set_dump_channel, save_active_token, validate_and_consume_token
 from EvaRose.strings import HELP_TXT
 from bot import EvaRoseUser
