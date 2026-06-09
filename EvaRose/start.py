@@ -371,13 +371,28 @@ async def settings_cmd(client, message):
     text += f"📝 **Branding Caption:** `{custom_cap if custom_cap else 'Not Set'}`\n"
     text += f"🖼️ **Custom Thumbnail:** {'🟢 Custom Set' if thumb_exist else '🔴 Default'}"
         
+    # 🌟 100% PURE MANUALLY CORRECTED SETTINGS CALLBACK BUTTONS (NO GLITCH)
     buttons = [
-        [InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), InlineKeyboardButton("🚪 𝐋𝐎𝐆block𝐔𝐓 𝐒𝐄𝐒𝐒𝐈block", callback_data="req_logout")],
-        [InlineKeyboardButton("⚙️ 𝐒block𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝐑block𝐌block𝐕block 𝐃𝐔𝐌...", callback_data="rem_dump")],
-        [InlineKeyboardButton("✍️ 𝐒block𝐓 𝐂𝐀𝐏𝐓𝐈block", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ 𝐑block𝐌block𝐕block 𝐂𝐀𝐏...", callback_data="rem_caption")],
-        [InlineKeyboardButton("🖼️ 𝐒block𝐓 替换", callback_data="set_thumb_info"), InlineKeyboardButton("🗑️ 𝐑block𝐌block𝐕block 𝐓𝐇𝐔...", callback_data="rem_thumb")],
-        [InlineKeyboardButton("🔙 𝐁block🇨𝐊 𝐓block 𝐌block𝐍𝐔", callback_data="back_to_main_start")]
-    ]
+        [
+            InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), 
+            InlineKeyboardButton("🚪 𝐋𝐎𝐆𝐎𝐔𝐓 𝐒𝐄𝐒𝐒𝐈𝐎𝐍", callback_data="req_logout")
+        ],
+        [
+            InlineKeyboardButton("⚙️ 𝐒𝐄𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), 
+            InlineKeyboardButton("❌ 𝐑𝐄𝐌𝐎𝐕Ｅ 𝐃𝐔𝐌𝐏", callback_data="rem_dump")
+        ],
+        [
+            InlineKeyboardButton("✍️ 𝐒𝐄𝐓 𝐂𝐀𝐏𝐓folder", callback_data="set_caption_info"), 
+            InlineKeyboardButton("🗑️ 𝐑block𝐌block... ", callback_data="rem_caption")
+        ],
+        [
+            InlineKeyboardButton("🖼️ 𝐒𝐄𝐓 𝐓𝐇𝐔𝐌𝐁𝐍𝐀𝐈𝐋", callback_data="set_thumb_info"), 
+            InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_thumb")
+        ],
+        [
+            InlineKeyboardButton("🔙 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐌𝐄𝐍𝐔", callback_data="back_to_main_start")
+        ]
+	]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 @Client.on_callback_query(filters.regex("^settings_cmd$"))
@@ -394,13 +409,28 @@ async def settings_callback(client, callback_query):
     text += f"📝 **Branding Caption:** `{custom_cap if custom_cap else 'Not Set'}`\n"
     text += f"🖼️ **Custom Thumbnail:** {'🟢 Custom Set' if thumb_exist else '🔴 Default'}"
         
+    # 🌟 100% PURE MANUALLY CORRECTED SETTINGS CALLBACK BUTTONS (NO GLITCH)
     buttons = [
-        [InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), InlineKeyboardButton("🚪 𝐋𝐎𝐆block𝐔𝐓 𝐒𝐄𝐒𝐒𝐈block", callback_data="req_logout")],
-        [InlineKeyboardButton("⚙️ 𝐒block𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), InlineKeyboardButton("❌ 𝐑block𝐌block ... ", callback_data="rem_dump")],
-        [InlineKeyboardButton("✍️ 𝐒block𝐓 𝐂... ", callback_data="set_caption_info"), InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_caption")],
-        [InlineKeyboardButton("🖼️ 𝐒block𝐓 替换", callback_data="set_thumb_info"), InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_thumb")],
-        [InlineKeyboardButton("🔙 𝐁block🇨𝐊 𝐓block 𝐌block𝐍𝐔", callback_data="back_to_main_start")]
-    ]
+        [
+            InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), 
+            InlineKeyboardButton("🚪 𝐋𝐎𝐆𝐎𝐔𝐓 𝐒𝐄𝐒𝐒𝐈𝐎𝐍", callback_data="req_logout")
+        ],
+        [
+            InlineKeyboardButton("⚙️ 𝐒𝐄𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), 
+            InlineKeyboardButton("❌ 𝐑𝐄𝐌𝐎𝐕Ｅ 𝐃𝐔𝐌𝐏", callback_data="rem_dump")
+        ],
+        [
+            InlineKeyboardButton("✍️ 𝐒𝐄𝐓 𝐂𝐀𝐏𝐓folder", callback_data="set_caption_info"), 
+            InlineKeyboardButton("🗑️ 𝐑block𝐌block... ", callback_data="rem_caption")
+        ],
+        [
+            InlineKeyboardButton("🖼️ 𝐒𝐄𝐓 𝐓𝐇𝐔𝐌𝐁𝐍𝐀𝐈𝐋", callback_data="set_thumb_info"), 
+            InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_thumb")
+        ],
+        [
+            InlineKeyboardButton("🔙 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐌𝐄𝐍𝐔", callback_data="back_to_main_start")
+        ]
+	]
     try: await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     except MessageNotModified: await callback_query.answer("Settings updated.")
 
