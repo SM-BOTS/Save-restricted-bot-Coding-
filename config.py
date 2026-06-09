@@ -1,6 +1,9 @@
-# Don't Remove Credit Tg - @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
-# Ask Doubt on telegram @KingVJ01
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
 
 import os
 
