@@ -547,9 +547,9 @@ async def back_to_main_start_callback(client, callback_query):
     await callback_query.answer()
     
     buttons = [
-        [InlineKeyboardButton("❣️ 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/kingvj01")],
-        [InlineKeyboardButton("🔍 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐑𝐎𝐔𝐏", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 𝐔block 𝐂𝐇block𝐄𝐋", url="https://t.me/vj_bots")],
-        [InlineKeyboardButton("⚙️ 𝐁𝐎𝐓 𝐒block𝐓𝐓𝐈block𝐆𝐒", callback_data="settings_cmd")]
+        [InlineKeyboardButton("❣️ DEVELOPER", url="https://t.me/EvaRoseX")],
+        [InlineKeyboardButton("🔍 SUPPORT GROUP", url="https://t.me/ERSupportGroup"), InlineKeyboardButton("🤖 𝐔block 𝐂𝐇block𝐄𝐋", url="https://t.me/ERBotsUpdate")],
+        [InlineKeyboardButton("⚙️ BOT SETTINGS", callback_data="settings_cmd")]
     ]
     await callback_query.message.edit_text(
         text=f"<b>👋 Hi {callback_query.from_user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>", 
