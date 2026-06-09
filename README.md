@@ -49,9 +49,6 @@ Configure the following variables in your `config.py` or system environment dash
 
 ### 1. Local Setup
 ```bash
-# Clone the repository
-git clone [https://github.com/yourusername/your-repo-name.git](https://github.com/yourusername/your-repo-name.git)
-cd your-repo-name
 
 # Install dependencies
 pip install -r requirements.txt
