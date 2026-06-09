@@ -10,7 +10,7 @@ import uuid
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied, MessageNotModified
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
-from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, BOT_USERNAME, SHORTENER_URL, SHORTENER_API, VERIFY_EXPIRE_HOURS, LOG_CHANNEL
+from config import API_ID, API_HASH, ERROR_MESSAGE, LOGIN_SYSTEM, STRING_SESSION, CHANNEL_ID, WAITING_TIME, BOT_USERNAME, SHORTENER_URL, SHORTENER_API, VERIFY_EXPIRE_HOURS, LOG_CHANNEL, START_PIC
 from database.db import db, get_dump_channel, set_dump_channel, save_active_token, validate_and_consume_token
 from EvaRose.strings import HELP_TXT
 from bot import EvaRoseUser
@@ -131,22 +131,22 @@ async def send_start(client: Client, message: Message):
     
     text = f"<b>👋 Hi {user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>"
     
-    # 🖼️ CODES TO SEND IMAGE/VIDEO INSTEAD OF PLAIN TEXT
+    # Safely get START_PIC link directly from env or config without crashing
     try:
-        # Agar aap config me START_PIC ya START_VIDEO use kar rahe ho toh use yahan auto-detect karega
-        from config import START_PIC
-        if START_PIC:
-            if START_PIC.endswith(('.mp4', '.mkv', '.webm')):
-                await client.send_video(chat_id=message.chat.id, video=START_PIC, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+        import config
+        # Agar config me hai ya Koyeb ke Environment Variables me set hai
+        start_pic_link = getattr(config, 'START_PIC', os.environ.get('START_PIC', None))
+        
+        if start_pic_link:
+            if str(start_pic_link).endswith(('.mp4', '.mkv', '.webm')):
+                await client.send_video(chat_id=message.chat.id, video=start_pic_link, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
             else:
-                await client.send_photo(chat_id=message.chat.id, photo=START_PIC, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+                await client.send_photo(chat_id=message.chat.id, photo=start_pic_link, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
         else:
-            # Agar link nahi mila toh bina image ke text bhej dega takki crash na ho
             await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
     except Exception as e:
         print(f"Media Error: {e}")
-        await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
-		
+        await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)		
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
     await client.send_message(chat_id=message.chat.id, text=f"{HELP_TXT}")
