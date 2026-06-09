@@ -288,6 +288,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     # ✅ Is line se badal do:
 custom_thumb = await db.get_thumbnail(message.from_user.id)
 
+    # ✅ SAHI (Ekdam line me)
     if "Document" == msg_type:
         try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id) if not custom_thumb else custom_thumb
         except: ph_path = custom_thumb
