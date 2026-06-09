@@ -1,10 +1,10 @@
 # 🤖 SAVE RESTRICTED CONTENT TELEGRAM BOT
 
 ### 👑 CREDITS & OWNERSHIP:
-* **Core Developer & Framework Architect:** [@ developer Rose](https://t.me/EvaRoseX) ❣️
+* **Core Developer & Framework Architect:** [developer Rose](https://t.me/EvaRoseX) ❣️
 * **Original Repository Base:** [@EvaRoseX](https://t.me/EvaRoseX) 🌹
-* **Official Automated Updates:** [@vj_bots](https://t.me/ERBotsUpdate) 🤖
-* **Support Group:** [@vj_bot_disscussion](https://t.me/ERSupportGroup) 🔍
+* **Official Automated Updates:** [@Rose Bot Update](https://t.me/ERBotsUpdate) 🤖
+* **Support Group:** [@Eva Rose Support Group](https://t.me/ERSupportGroup) 🔍
 
 ---
 
