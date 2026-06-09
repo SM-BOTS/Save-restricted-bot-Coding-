@@ -285,7 +285,8 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     if batch_temp.IS_BATCH.get(message.from_user.id): return 
             
     uploaded_msg = None
-    custom_thumb = await db.get_thumbnail(user_id=message.from_user.id)
+    # ✅ Is line se badal do:
+custom_thumb = await db.get_thumbnail(message.from_user.id)
 
     if "Document" == msg_type:
         try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id) if not custom_thumb else custom_thumb
