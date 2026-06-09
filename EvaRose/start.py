@@ -374,23 +374,23 @@ async def settings_cmd(client, message):
     # 🌟 100% PURE MANUALLY CORRECTED SETTINGS CALLBACK BUTTONS (NO GLITCH)
     buttons = [
         [
-            InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), 
-            InlineKeyboardButton("🚪 𝐋𝐎𝐆𝐎𝐔𝐓 𝐒𝐄𝐒𝐒𝐈𝐎𝐍", callback_data="req_logout")
+            InlineKeyboardButton("🔑 LOGIN", callback_data="req_login"), 
+            InlineKeyboardButton("🚪 LOGOUT", callback_data="req_logout")
         ],
         [
-            InlineKeyboardButton("⚙️ 𝐒𝐄𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), 
-            InlineKeyboardButton("❌ 𝐑𝐄𝐌𝐎𝐕Ｅ 𝐃𝐔𝐌𝐏", callback_data="rem_dump")
+            InlineKeyboardButton("⚙️ SET DUMP", callback_data="set_dump_info"), 
+            InlineKeyboardButton("❌ REM DUMP", callback_data="rem_dump")
         ],
         [
-            InlineKeyboardButton("✍️ 𝐒𝐄𝐓 𝐂𝐀𝐏𝐓folder", callback_data="set_caption_info"), 
-            InlineKeyboardButton("🗑️ 𝐑block𝐌block... ", callback_data="rem_caption")
+            InlineKeyboardButton("✍️ SET CAP", callback_data="set_caption_info"), 
+            InlineKeyboardButton("🗑️ REM CAP", callback_data="rem_caption")
         ],
         [
-            InlineKeyboardButton("🖼️ 𝐒𝐄𝐓 𝐓𝐇𝐔𝐌𝐁𝐍𝐀𝐈𝐋", callback_data="set_thumb_info"), 
-            InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_thumb")
+            InlineKeyboardButton("🖼️ SET THUMB", callback_data="set_thumb_info"), 
+            InlineKeyboardButton("🗑️ REM THUMB", callback_data="rem_thumb")
         ],
         [
-            InlineKeyboardButton("🔙 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐌𝐄𝐍𝐔", callback_data="back_to_main_start")
+            InlineKeyboardButton("🔙 BACK TO MENU", callback_data="back_to_main_start")
         ]
 	]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -412,23 +412,23 @@ async def settings_callback(client, callback_query):
     # 🌟 100% PURE MANUALLY CORRECTED SETTINGS CALLBACK BUTTONS (NO GLITCH)
     buttons = [
         [
-            InlineKeyboardButton("🔑 𝐋𝐎𝐆𝐈𝐍 𝐀🇨🇨𝐎𝐔𝐍𝐓", callback_data="req_login"), 
-            InlineKeyboardButton("🚪 𝐋𝐎𝐆𝐎𝐔𝐓 𝐒𝐄𝐒𝐒𝐈𝐎𝐍", callback_data="req_logout")
+            InlineKeyboardButton("🔑 LOGIN", callback_data="req_login"), 
+            InlineKeyboardButton("🚪 LOGOUT", callback_data="req_logout")
         ],
         [
-            InlineKeyboardButton("⚙️ 𝐒𝐄𝐓 𝐃𝐔𝐌𝐏", callback_data="set_dump_info"), 
-            InlineKeyboardButton("❌ 𝐑𝐄𝐌𝐎𝐕Ｅ 𝐃𝐔𝐌𝐏", callback_data="rem_dump")
+            InlineKeyboardButton("⚙️ SET DUMP", callback_data="set_dump_info"), 
+            InlineKeyboardButton("❌ REM DUMP", callback_data="rem_dump")
         ],
         [
-            InlineKeyboardButton("✍️ 𝐒𝐄𝐓 𝐂𝐀𝐏𝐓folder", callback_data="set_caption_info"), 
-            InlineKeyboardButton("🗑️ 𝐑block𝐌block... ", callback_data="rem_caption")
+            InlineKeyboardButton("✍️ SET CAP", callback_data="set_caption_info"), 
+            InlineKeyboardButton("🗑️ REM CAP", callback_data="rem_caption")
         ],
         [
-            InlineKeyboardButton("🖼️ 𝐒𝐄𝐓 𝐓𝐇𝐔𝐌𝐁𝐍𝐀𝐈𝐋", callback_data="set_thumb_info"), 
-            InlineKeyboardButton("🗑️ 𝐑block... ", callback_data="rem_thumb")
+            InlineKeyboardButton("🖼️ SET THUMB", callback_data="set_thumb_info"), 
+            InlineKeyboardButton("🗑️ REM THUMB", callback_data="rem_thumb")
         ],
         [
-            InlineKeyboardButton("🔙 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐌𝐄𝐍𝐔", callback_data="back_to_main_start")
+            InlineKeyboardButton("🔙 BACK TO MENU", callback_data="back_to_main_start")
         ]
 	]
     try: await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
