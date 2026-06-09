@@ -538,9 +538,8 @@ async def remove_thumbnail_callback(client, callback_query):
         try: os.remove(current_thumb)
         except: pass
     await db.rem_thumbnail(user_id)
-    back_btn = [[InlineKeyboardButton("🔙 𝐁block🇨𝐊 𝐓block 𝐒block𝐓𝐓𝐈block𝐆𝐒", callback_data="settings_cmd")]]
+    back_btn = [[InlineKeyboardButton("🔙 BACK TO SETTINGS", callback_data="settings_cmd")]]
     await callback_query.message.edit_text("🔴 **Custom thumbnail removed.**", reply_markup=InlineKeyboardMarkup(back_btn))
-
 # --- GLOBAL BACK TO MAIN BOT MENU BUTTON INTERACTION ---
 @Client.on_callback_query(filters.regex("^back_to_main_start$"))
 async def back_to_main_start_callback(client, callback_query):
