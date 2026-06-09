@@ -1,3 +1,14 @@
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
+
+
+
+
+
+
 import motor.motor_asyncio
 import time  
 from config import DB_URI, DB_NAME
@@ -154,3 +165,10 @@ async def validate_and_consume_token(user_id, token_id):
         )
         return True
     return False
+
+
+# DONT REMOVE CREDITS
+# Developer: [ Eva Rose ] (https://t.me/EvaRoseX)
+# Join TG Channel: https://t.me/ERBotsUpdate
+# Ask Doubt On Telegram: @EvaRoseX
+# DEVELOPER: BY EVA ROSE
