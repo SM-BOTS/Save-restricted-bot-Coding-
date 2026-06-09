@@ -131,23 +131,19 @@ async def send_start(client: Client, message: Message):
     
     text = f"<b>👋 Hi {user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>"
     
-    # Safely get START_PIC link directly from env or config without crashing
+    # 🖼️ ONLY SIMPLE IMAGE CODE (NO VIDEO)
     try:
         import config
-        # Agar config me hai ya Koyeb ke Environment Variables me set hai
         start_pic_link = getattr(config, 'START_PIC', os.environ.get('START_PIC', None))
         
         if start_pic_link:
-            if str(start_pic_link).endswith(('.mp4', '.mkv', '.webm')):
-                await client.send_video(chat_id=message.chat.id, video=start_pic_link, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
-            else:
-                await client.send_photo(chat_id=message.chat.id, photo=start_pic_link, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+            # Seedhe sirf photo bhejega bina kisi video checking ke
+            await client.send_photo(chat_id=message.chat.id, photo=start_pic_link, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
         else:
             await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
     except Exception as e:
         print(f"Media Error: {e}")
-        await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)		
-@Client.on_message(filters.command(["help"]))
+        await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)@Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
     await client.send_message(chat_id=message.chat.id, text=f"{HELP_TXT}")
 
