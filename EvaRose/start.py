@@ -100,7 +100,7 @@ async def send_start(client: Client, message: Message):
         # 🔔 NEW USER LOG SYSTEM FOR EVAROSE
         if LOG_CHANNEL:
             try:
-                log_text = "👤 **𝐍𝐄𝐖 𝐔𝐒𝐄𝐑 𝐒𝐓𝐀𝐑𝐓𝐄𝐃 𝐓𝐇𝐄 𝐁𝐎𝐓**\n\n"
+                log_text = "👤 **NEW USER STARTED THE BOT**\n\n"
                 log_text += f"📝 **Name:** {user.first_name} {user.last_name or ''}\n"
                 log_text += f"🆔 **User ID:** `{user.id}`\n"
                 log_text += f"🌐 **Username:** @{user.username if user.username else 'No Username'}\n"
@@ -122,14 +122,31 @@ async def send_start(client: Client, message: Message):
             await message.reply_text("❌ **Invalid Token:** Link dobara verify karein.")
             return
 
-    # PREMIUM STYLIZED START BUTTONS WITH EVAROSE IDENTITY
+    # START MENU BUTTONS (NORMAL FONT & SHORT SIZE)
     buttons = [
-        [InlineKeyboardButton("❣️ 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/EvaRoseX")],
-        [InlineKeyboardButton("🔍 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐑𝐎𝐔𝐏", url="https://t.me/ERSupportGroup"), InlineKeyboardButton("🤖 𝐔𝐏𝐃𝐀𝐓𝐄 𝐂𝐇𝐀𝐍𝐍𝐄𝐋", url="https://t.me/ERBotsUpdate")],
-        [InlineKeyboardButton("⚙️ 𝐁𝐎𝐓 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒", callback_data="settings_cmd")]
+        [InlineKeyboardButton("❣️ DEVELOPER", url="https://t.me/kingvj01")],
+        [InlineKeyboardButton("🔍 SUPPORT GROUP", url="https://t.me/vj_bot_disscussion"), InlineKeyboardButton("🤖 UPDATE CHANNEL", url="https://t.me/vj_bots")],
+        [InlineKeyboardButton("⚙️ BOT SETTINGS", callback_data="settings_cmd")]
     ]
-    await client.send_message(chat_id=message.chat.id, text=f"<b>👋 Hi {user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>", reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
-
+    
+    text = f"<b>👋 Hi {user.mention}, I am Save Restricted Content Bot.\n\nKnow how to use bot by - /help</b>"
+    
+    # 🖼️ CODES TO SEND IMAGE/VIDEO INSTEAD OF PLAIN TEXT
+    try:
+        # Agar aap config me START_PIC ya START_VIDEO use kar rahe ho toh use yahan auto-detect karega
+        from config import START_PIC
+        if START_PIC:
+            if START_PIC.endswith(('.mp4', '.mkv', '.webm')):
+                await client.send_video(chat_id=message.chat.id, video=START_PIC, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+            else:
+                await client.send_photo(chat_id=message.chat.id, photo=START_PIC, caption=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+        else:
+            # Agar link nahi mila toh bina image ke text bhej dega takki crash na ho
+            await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+    except Exception as e:
+        print(f"Media Error: {e}")
+        await client.send_message(chat_id=message.chat.id, text=text, reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+		
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
     await client.send_message(chat_id=message.chat.id, text=f"{HELP_TXT}")
