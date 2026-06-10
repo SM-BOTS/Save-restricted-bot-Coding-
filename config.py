@@ -28,9 +28,6 @@ API_HASH = os.environ.get("API_HASH", "7cd3bda26b08957a7205bbe8a51e6e90")
 # Your Owner / Admin Id For Broadcast 
 ADMINS = int(os.environ.get("ADMINS", "8391386178"))
 FORCE_CLEAN_CAPTION = True
-# --- Welcome Image Settings ---
-START_IMAGE_SHOW = True  # Agar image chahiye toh True rakho, nahi chahiye toh False kar do
-START_IMAGE_URL = "https://i.ibb.co/LzSg5v39/photo-2026-06-09-15-56-22-7649425174667722768.jpg"  # Apni image ka direct link
 # --- Auto Delete Settings ---
 # Time seconds me hona chahiye (Udaharan: 300 seconds = 5 minutes)
 AUTO_DELETE_TIME = 300
