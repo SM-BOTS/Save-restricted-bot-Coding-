@@ -17,14 +17,13 @@ from database.db import db, get_dump_channel, set_dump_channel, save_active_toke
 from EvaRose.strings import HELP_TXT
 from bot import EvaRoseUser
 
-# 📁 AUTOMATIC DOWNLOADS FOLDER CREATION ON STARTUP
-DOWNLOAD_DIR = "/workspace/downloads"
+# 📁 UNIVERSAL DOWNLOADS FOLDER
+DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 if not os.path.exists(DOWNLOAD_DIR):
     try:
         os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     except Exception as e:
         print(f"Folder Creation Error: {e}")
-
 class batch_temp(object):
     IS_BATCH = {}
     USER_FILES = {}
@@ -263,25 +262,25 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             return 
 
-    smsg = await client.send_message(message.chat.id, '**⏳ Downloading your restricted media...**', reply_to_message_id=message.id)
+    smsg = await client.send_message(message.chat.id, '⏳ **Downloading restricted media...**', reply_to_message_id=message.id)
     asyncio.create_task(downstatus(client, f'{message.id}downstatus.txt', smsg, chat))
     
-    # --- SAFE DOWNLOAD BLOCK ---
+    # --- SIMPLIFIED DOWNLOAD ---
     file = None
     try:
-        # Absolute clean path ke sath download fallback handling
-        file = await acc.download_media(msg, file_name=f"{DOWNLOAD_DIR}/", progress=progress, progress_args=[message,"down"])
+        # Direct folder path without hardcoded string concatenation
+        file = await acc.download_media(msg, file_name=DOWNLOAD_DIR + "/", progress=progress, progress_args=[message,"down"])
     except Exception as e:
         if ERROR_MESSAGE == True: 
-            await client.send_message(message.chat.id, f"❌ **Download Stopped:** {e}\n*(Server timeout ya disk space check karein)*", reply_to_message_id=message.id) 
+            await client.send_message(message.chat.id, f"❌ **Download Error:** {e}", reply_to_message_id=message.id)
     finally:
         if os.path.exists(f'{message.id}downstatus.txt'): 
             try: os.remove(f'{message.id}downstatus.txt')
             except: pass
 
-    # Strict Validation: Agar file exist nahi karti toh aage mat badho
+    # Strict Validation: Agar path nahi mila toh safe exit
     if not file or not os.path.exists(file):
-        try: await smsg.edit_text("❌ **Error:** Media download aadhura rha ya fail ho gaya. File nahi mili.")
+        try: await smsg.edit_text("❌ **Error:** File server par save nahi ho payi. Link check karein ya bot restart karein.")
         except: pass
         return
 
@@ -297,34 +296,43 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     uploaded_msg = None
     custom_thumb = await db.get_thumbnail(message.from_user.id)
 
-    # --- SAFE UPLOAD BLOCK ---
+    # --- SAFE UPLOAD ---
     try:
         if "Document" == msg_type:
-            try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
             if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            
         elif "Video" == msg_type:
-            try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
             if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            
         elif "Animation" == msg_type:
             uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            
         elif "Sticker" == msg_type:
             uploaded_msg = await client.send_sticker(chat, file, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)     
+            
         elif "Voice" == msg_type:
             uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
+            
         elif "Audio" == msg_type:
-            try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
             if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            
         elif "Photo" == msg_type:
             uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+            
     except Exception as e:
-        if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Upload Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
+        if ERROR_MESSAGE == True: 
+            await client.send_message(message.chat.id, f"Upload Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     
+    # Final cleanup
     if uploaded_msg: batch_temp.USER_FILES[message.from_user.id].append(uploaded_msg.id)
     if uploaded_msg and user_dump:
         try: await uploaded_msg.copy(chat_id=int(user_dump))
@@ -334,7 +342,7 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         try: os.remove(f'{message.id}upstatus.txt')
         except: pass
         
-    if os.path.exists(file): 
+    if file and os.path.exists(file): 
         try: os.remove(file)
         except: pass
         
