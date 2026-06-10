@@ -263,28 +263,32 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
             if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
             return 
 
-    smsg = await client.send_message(message.chat.id, '**Downloading...**', reply_to_message_id=message.id)
+    smsg = await client.send_message(message.chat.id, '**⏳ Downloading your restricted media...**', reply_to_message_id=message.id)
     asyncio.create_task(downstatus(client, f'{message.id}downstatus.txt', smsg, chat))
     
+    # --- SAFE DOWNLOAD BLOCK ---
+    file = None
     try:
-        # Extra security block to force absolute clean download paths
-        file = await acc.download_media(msg, file_name=DOWNLOAD_DIR + "/", progress=progress, progress_args=[message,"down"])
-        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
+        # Absolute clean path ke sath download fallback handling
+        file = await acc.download_media(msg, file_name=f"{DOWNLOAD_DIR}/", progress=progress, progress_args=[message,"down"])
     except Exception as e:
-        if ERROR_MESSAGE == True: await client.send_message(message.chat.id, f"Download Error: {e}", reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML) 
-        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
-        try: await smsg.delete()
-        except: pass
-        return
+        if ERROR_MESSAGE == True: 
+            await client.send_message(message.chat.id, f"❌ **Download Stopped:** {e}\n*(Server timeout ya disk space check karein)*", reply_to_message_id=message.id) 
+    finally:
+        if os.path.exists(f'{message.id}downstatus.txt'): 
+            try: os.remove(f'{message.id}downstatus.txt')
+            except: pass
 
+    # Strict Validation: Agar file exist nahi karti toh aage mat badho
     if not file or not os.path.exists(file):
-        if ERROR_MESSAGE == True: await client.send_message(message.chat.id, "❌ **Error:** Media file path not found or download interrupted.", reply_to_message_id=message.id)
-        try: await smsg.delete()
+        try: await smsg.edit_text("❌ **Error:** Media download aadhura rha ya fail ho gaya. File nahi mili.")
         except: pass
         return
 
     if batch_temp.IS_BATCH.get(message.from_user.id): 
         if os.path.exists(file): os.remove(file)
+        try: await smsg.delete()
+        except: pass
         return 
         
     asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, chat))
@@ -293,17 +297,18 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
     uploaded_msg = None
     custom_thumb = await db.get_thumbnail(message.from_user.id)
 
+    # --- SAFE UPLOAD BLOCK ---
     try:
         if "Document" == msg_type:
-            try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.document.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_document(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-            if ph_path != None and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
         elif "Video" == msg_type:
-            try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.video.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_video(chat, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
-            if ph_path != None and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
         elif "Animation" == msg_type:
             uploaded_msg = await client.send_animation(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
         elif "Sticker" == msg_type:
@@ -311,10 +316,10 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         elif "Voice" == msg_type:
             uploaded_msg = await client.send_voice(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])
         elif "Audio" == msg_type:
-            try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id, file_name=DOWNLOAD_DIR + "/") if not custom_thumb else custom_thumb
+            try: ph_path = await acc.download_media(msg.audio.thumbs[0].file_id, file_name=f"{DOWNLOAD_DIR}/") if not custom_thumb else custom_thumb
             except: ph_path = custom_thumb
             uploaded_msg = await client.send_audio(chat, file, thumb=ph_path, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML, progress=progress, progress_args=[message,"up"])   
-            if ph_path != None and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
+            if ph_path and ph_path != custom_thumb and os.path.exists(ph_path): os.remove(ph_path)
         elif "Photo" == msg_type:
             uploaded_msg = await client.send_photo(chat, file, caption=caption, reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
     except Exception as e:
@@ -325,8 +330,14 @@ async def handle_private(client: Client, acc, message: Message, chatid, msgid: i
         try: await uploaded_msg.copy(chat_id=int(user_dump))
         except Exception as e: print(f"Dump forward error: {e}")
         
-    if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(file): os.remove(file)
+    if os.path.exists(f'{message.id}upstatus.txt'): 
+        try: os.remove(f'{message.id}upstatus.txt')
+        except: pass
+        
+    if os.path.exists(file): 
+        try: os.remove(file)
+        except: pass
+        
     try: await client.delete_messages(message.chat.id, [smsg.id])
     except: pass
 
